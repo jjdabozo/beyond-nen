@@ -408,25 +408,50 @@
   /* ---- primary nen type picker ---- */
   .nen-type-menu{
     position:fixed; inset:0; z-index:17; overflow:auto;
-    background: radial-gradient(ellipse at 50% 40%, rgba(16,13,30,.97) 0%, rgba(5,5,12,1) 100%);
+    background: radial-gradient(ellipse at 50% 38%, #161130 0%, #0b0918 55%, #050409 100%);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:30px; padding:44px 18px;
   }
   .nen-type-menu.hidden{ display:none; }
-  .nen-type-cards{ display:flex; gap:15px; flex-wrap:wrap; justify-content:center; max-width:1180px; }
+  .nen-type-menu::before{
+    content:''; position:absolute; left:50%; top:44%; width:720px; height:720px;
+    transform:translate(-50%,-50%); border-radius:50%; pointer-events:none;
+    background: radial-gradient(circle, rgba(120,100,220,.14), rgba(212,175,55,.06) 45%, transparent 68%);
+    animation: introBreath 5.2s ease-in-out infinite;
+  }
+  .nen-type-menu .race-title{ animation: nenDrop .6s cubic-bezier(.2,1.2,.4,1) both; }
+  .nen-type-menu .race-sub{ animation: nenDrop .6s .12s cubic-bezier(.2,1.2,.4,1) both; }
+  @keyframes nenDrop{ from{ opacity:0; transform:translateY(-16px); } to{ opacity:1; transform:none; } }
+  .nen-type-cards{ display:flex; gap:15px; flex-wrap:wrap; justify-content:center; max-width:1180px; position:relative; z-index:1; }
   .nen-card{
     width:178px; padding:18px 14px 14px; cursor:pointer; text-align:center;
-    background: linear-gradient(180deg, rgba(30,26,48,.6), rgba(10,8,20,.95));
-    border:1px solid transparent;
-    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    background: transparent;
+    border:1px solid rgba(255,255,255,.08); border-radius:3px;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    opacity:0;
+    animation: nenCardIn .6s cubic-bezier(.18,1.15,.4,1) forwards;
+    animation-delay: calc(var(--i, 0) * 95ms + 180ms);
+  }
+  @keyframes nenCardIn{
+    from{ opacity:0; transform:translateY(30px) scale(.92); }
+    to{ opacity:1; transform:none; }
   }
   .nen-card:hover{
-    transform:translateY(-6px);
+    transform:translateY(-8px);
     border-color:var(--nc, var(--gold-bright));
-    box-shadow:0 8px 30px rgba(0,0,0,.55), 0 0 22px var(--nc-glow, rgba(212,175,55,.25));
+    background: radial-gradient(circle at 50% 18%, var(--nc-glow, rgba(212,175,55,.2)), transparent 72%);
+    box-shadow:0 10px 34px rgba(0,0,0,.6), 0 0 26px var(--nc-glow, rgba(212,175,55,.25));
   }
-  .nen-card .nk{ font-family:'Noto Serif JP',serif; font-size:46px; line-height:1.1; margin-bottom:8px; }
+  .nen-card .nk{
+    font-family:'Noto Serif JP',serif; font-size:46px; line-height:1.1; margin-bottom:8px;
+    animation: kanjiBreath 3.2s ease-in-out infinite;
+  }
+  @keyframes kanjiBreath{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.07); } }
   .nen-card .nn{ font-family:'Cinzel',serif; font-weight:700; font-size:14px; color:#fff; letter-spacing:.05em; margin-bottom:12px; }
+  .nen-card .nn::after{
+    content:''; display:block; width:42px; height:1px; margin:9px auto 0;
+    background:var(--nc, var(--gold)); opacity:.55;
+  }
   .nen-aff{ display:flex; flex-direction:column; gap:4px; font-family:'JetBrains Mono',monospace; font-size:10.5px; }
   .nen-aff div{ display:flex; justify-content:space-between; }
   .nen-aff .pv{ color:var(--text); }
@@ -715,6 +740,8 @@
 
 <!-- primary nen type selection (shown when entering the nen tree) -->
 <div class="nen-type-menu hidden" id="nenTypeMenu">
+  <div class="intro-ring r1"></div>
+  <div class="intro-ring r2"></div>
   <div class="race-title">CHOOSE YOUR NEN TYPE</div>
   <div class="race-sub">YOUR AFFINITY DECIDES HOW FAR EACH PATH CAN GO</div>
   <div class="nen-type-cards" id="nenTypeCards"></div>
@@ -2537,6 +2564,7 @@
     card.className = 'nen-card';
     card.style.setProperty('--nc', t.color);
     card.style.setProperty('--nc-glow', t.color + '44');
+    card.style.setProperty('--i', i);
     const rows = AFF_ORDER.map(pathName => {
       const sec = SECTORS.find(s => s.name === pathName);
       return `<div><span style="color:${sec.color}">${KANJI[pathName]} ${pathName.slice(0, 7)}</span><span class="pv">${t.aff[pathName]}%</span></div>`;
@@ -2567,21 +2595,25 @@
     introEl.classList.add('opening');
     setTimeout(() => introEl.remove(), 1200);
   });
-  // drifting aura motes for the title screen
-  for(let i=0;i<26;i++){
-    const m = document.createElement('span');
-    m.className = 'intro-mote';
-    const size = 2 + Math.random()*2.5;
-    m.style.width = size + 'px';
-    m.style.height = size + 'px';
-    m.style.left = (Math.random()*100) + '%';
-    m.style.setProperty('--mo', (0.25 + Math.random()*0.5).toFixed(2));
-    m.style.boxShadow = '0 0 ' + (size*3).toFixed(0) + 'px rgba(242,209,107,.8)';
-    const dur = 8 + Math.random()*10;
-    m.style.animationDuration = dur.toFixed(1) + 's';
-    m.style.animationDelay = (-Math.random()*dur).toFixed(1) + 's';
-    introEl.appendChild(m);
+  // drifting aura motes for the title screen and the nen type picker
+  function spawnMotes(host, count){
+    for(let i=0;i<count;i++){
+      const m = document.createElement('span');
+      m.className = 'intro-mote';
+      const size = 2 + Math.random()*2.5;
+      m.style.width = size + 'px';
+      m.style.height = size + 'px';
+      m.style.left = (Math.random()*100) + '%';
+      m.style.setProperty('--mo', (0.25 + Math.random()*0.5).toFixed(2));
+      m.style.boxShadow = '0 0 ' + (size*3).toFixed(0) + 'px rgba(242,209,107,.8)';
+      const dur = 8 + Math.random()*10;
+      m.style.animationDuration = dur.toFixed(1) + 's';
+      m.style.animationDelay = (-Math.random()*dur).toFixed(1) + 's';
+      host.appendChild(m);
+    }
   }
+  spawnMotes(introEl, 26);
+  spawnMotes(document.getElementById('nenTypeMenu'), 18);
   fitViewBox();
   renderBP();
   renderAttrs();
