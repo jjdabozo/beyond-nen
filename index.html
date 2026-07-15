@@ -405,6 +405,32 @@
     mask-image: linear-gradient(180deg, #000 86%, transparent 100%);
   }
   .race-desc{ font-size:12px; line-height:1.55; color:#bfb6d4; padding:14px 16px 18px; }
+  /* ---- primary nen type picker ---- */
+  .nen-type-menu{
+    position:fixed; inset:0; z-index:17; overflow:auto;
+    background: radial-gradient(ellipse at 50% 40%, rgba(16,13,30,.97) 0%, rgba(5,5,12,1) 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:30px; padding:44px 18px;
+  }
+  .nen-type-menu.hidden{ display:none; }
+  .nen-type-cards{ display:flex; gap:15px; flex-wrap:wrap; justify-content:center; max-width:1180px; }
+  .nen-card{
+    width:178px; padding:18px 14px 14px; cursor:pointer; text-align:center;
+    background: linear-gradient(180deg, rgba(30,26,48,.6), rgba(10,8,20,.95));
+    border:1px solid transparent;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .nen-card:hover{
+    transform:translateY(-6px);
+    border-color:var(--nc, var(--gold-bright));
+    box-shadow:0 8px 30px rgba(0,0,0,.55), 0 0 22px var(--nc-glow, rgba(212,175,55,.25));
+  }
+  .nen-card .nk{ font-family:'Noto Serif JP',serif; font-size:46px; line-height:1.1; margin-bottom:8px; }
+  .nen-card .nn{ font-family:'Cinzel',serif; font-weight:700; font-size:14px; color:#fff; letter-spacing:.05em; margin-bottom:12px; }
+  .nen-aff{ display:flex; flex-direction:column; gap:4px; font-family:'JetBrains Mono',monospace; font-size:10.5px; }
+  .nen-aff div{ display:flex; justify-content:space-between; }
+  .nen-aff .pv{ color:var(--text); }
+
   .race-load{ margin-top:36px; text-align:center; }
   .race-load-label{ font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--text-dim); margin-bottom:10px; }
   .race-load-row{ display:flex; }
@@ -687,6 +713,13 @@
   <div class="race-cards" id="raceCards"></div>
 </div>
 
+<!-- primary nen type selection (shown when entering the nen tree) -->
+<div class="nen-type-menu hidden" id="nenTypeMenu">
+  <div class="race-title">CHOOSE YOUR NEN TYPE</div>
+  <div class="race-sub">YOUR AFFINITY DECIDES HOW FAR EACH PATH CAN GO</div>
+  <div class="nen-type-cards" id="nenTypeCards"></div>
+</div>
+
 <!-- character menu -->
 <div class="char-modal hidden" id="charModal">
   <div class="char-panel">
@@ -820,7 +853,7 @@
       <button class="hub-card" data-hub="char"><div class="hub-icon">◈</div>Character</button>
       <button class="hub-card" data-hub="menu"><div class="hub-icon">☰</div>Main Menu</button>
       <button class="hub-card" data-hub="builds"><div class="hub-icon">♛</div>Popular Builds</button>
-      <button class="hub-card locked" data-hub="soon"><div class="hub-icon">🔒</div>Coming Soon</button>
+      <button class="hub-card" data-hub="nentype"><div class="hub-icon">発</div>Nen Type</button>
     </div>
   </div>
 </div>
@@ -926,6 +959,28 @@
       branchA:['Sticky Aura','Tar Field','Quicksand'],
       branchB:['Electric Palm','Thunderbolt','Storm Cloak'] },
   ];
+
+  /* ---------- primary nen type: affinity limits each path's reach ----------
+     100% = full depth · 80% = 4 tiers · 60% = 3 · 40% = 2 · 1% = root only · 0% = sealed */
+  const NEN_TYPES = [
+    { name:'Enhancer', kanji:'強', color:'#ff6b4a',
+      aff:{ Enhancement:100, Emission:80, Transmutation:80, Manipulation:60, Conjuration:60, Specialization:0 } },
+    { name:'Transmuter', kanji:'変', color:'#b06bff',
+      aff:{ Transmutation:100, Enhancement:80, Conjuration:80, Emission:60, Manipulation:40, Specialization:0 } },
+    { name:'Emitter', kanji:'放', color:'#5ab0ff',
+      aff:{ Emission:100, Enhancement:80, Manipulation:80, Transmutation:60, Conjuration:40, Specialization:0 } },
+    { name:'Conjurer', kanji:'具', color:'#3ee0b0',
+      aff:{ Conjuration:100, Transmutation:80, Enhancement:60, Manipulation:60, Emission:40, Specialization:1 } },
+    { name:'Manipulator', kanji:'操', color:'#ff5fa8',
+      aff:{ Manipulation:100, Emission:80, Enhancement:60, Conjuration:60, Transmutation:40, Specialization:1 } },
+    { name:'Specialist', kanji:'特', color:'#ffd166',
+      aff:{ Specialization:100, Manipulation:80, Conjuration:80, Emission:60, Transmutation:60, Enhancement:40 } },
+  ];
+  let nenPrimary = -1;   // -1 = not chosen yet (no restriction)
+  const REACH_BY_PCT = { 100:99, 80:4, 60:3, 40:2, 1:1, 0:0 };
+  function affinityFor(pathName){ return nenPrimary < 0 ? 100 : NEN_TYPES[nenPrimary].aff[pathName]; }
+  function reachTier(pathName){ return nenPrimary < 0 ? 99 : REACH_BY_PCT[affinityFor(pathName)]; }
+  function inReach(n){ return n.tier <= reachTier(n.type); }
 
   const nodes = [];
   const edges = [];
@@ -1159,13 +1214,14 @@
       // grow the text away from the tree so it never backs into its own branch
       const cos = Math.cos(sec.angle * Math.PI/180);
       t.setAttribute('text-anchor', cos > 0.3 ? 'start' : (cos < -0.3 ? 'end' : 'middle'));
+      const pct = affinityFor(sec.name);
       t.setAttribute('fill', sec.color);
-      t.setAttribute('fill-opacity','0.95');
+      t.setAttribute('fill-opacity', nenPrimary < 0 ? '0.95' : (pct >= 60 ? '0.95' : (pct >= 40 ? '0.55' : '0.3')));
       t.setAttribute('font-size','15');
       t.setAttribute('font-family','Cinzel, serif');
       t.setAttribute('font-weight','700');
       t.setAttribute('letter-spacing','3.5');
-      t.textContent = sec.name.toUpperCase();
+      t.textContent = sec.name.toUpperCase() + (nenPrimary >= 0 ? ' · ' + pct + '%' : '');
       svg.appendChild(t);
     });
 
@@ -1191,9 +1247,16 @@
       const line = document.createElementNS(SVG_NS,'line');
       line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
       line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
-      line.setAttribute('stroke', (lit || open) ? b.color : '#6a6875');
-      line.setAttribute('stroke-opacity', lit ? 1 : (open ? 0.45 : 0.3));
-      line.setAttribute('stroke-width', lit ? 2.6 : (open ? 1.6 : 1.4));
+      if(!inReach(b)){
+        // beyond your affinity — barely-there connection
+        line.setAttribute('stroke', '#3a3844');
+        line.setAttribute('stroke-opacity', 0.35);
+        line.setAttribute('stroke-width', 1);
+      } else {
+        line.setAttribute('stroke', (lit || open) ? b.color : '#6a6875');
+        line.setAttribute('stroke-opacity', lit ? 1 : (open ? 0.45 : 0.3));
+        line.setAttribute('stroke-width', lit ? 2.6 : (open ? 1.6 : 1.4));
+      }
       svg.appendChild(line);
     });
 
@@ -1250,9 +1313,16 @@
       const r = n.allocated ? base + n.level * 0.5 : base;
 
       // chunky hexagon node — bright pale core when learned, gray + padlock when sealed
+      const reachable = inReach(n);
       const hex = document.createElementNS(SVG_NS,'polygon');
       hex.setAttribute('points', hexPoints(n.x, n.y, r, isPassive));
-      if(n.allocated){
+      if(!reachable && !n.allocated){
+        // beyond your nen affinity — no glow, no colour, no lock, just dark
+        hex.setAttribute('fill', '#0a0912');
+        hex.setAttribute('stroke', '#3a3844');
+        hex.setAttribute('stroke-width', 1);
+        hex.setAttribute('stroke-opacity', 0.8);
+      } else if(n.allocated){
         hex.setAttribute('fill', tint(n.color, 0.55));
         hex.setAttribute('stroke', n.color);
         hex.setAttribute('stroke-width', 3);
@@ -1278,8 +1348,8 @@
       if(justUnlocked.has(n.id)) hex.classList.add('pop');
       g.appendChild(hex);
 
-      // small padlock riding the bottom edge of locked nodes
-      if(!unlocked && !n.allocated){
+      // small padlock riding the bottom edge of locked nodes (reachable ones only)
+      if(reachable && !unlocked && !n.allocated){
         const ly = n.y + r - 3;
         const backing = document.createElementNS(SVG_NS,'circle');
         backing.setAttribute('cx', n.x); backing.setAttribute('cy', ly); backing.setAttribute('r', 5.2);
@@ -1384,6 +1454,12 @@
     if(!node) return;
     selectedNodeId = id;
     if(!node.allocated){
+      // affinity gate first: your nen type decides how deep each path goes
+      if(!inReach(node)){
+        showToast('Beyond your affinity — ' + node.type + ' is capped at ' + affinityFor(node.type) + '%');
+        refresh(node);
+        return;
+      }
       // clicking a deeper skill buys the whole path to it, requirements permitting
       const chain = chainTo(node);
       const unmet = chain.filter(c => !statMet(c));
@@ -1429,6 +1505,10 @@
   // missing attribute points from the pool, then learn the skill (and any
   // skills on the way to it — the deepest requirement covers the whole chain)
   function allocateWithStats(node){
+    if(!node.allocated && !inReach(node)){
+      toggleNode(node.id);   // rejects with the affinity toast — no stats spent
+      return;
+    }
     if(!node.allocated && !statMet(node)){
       const need = statReq(node) - statHave(node);
       const remaining = ATTR_TOTAL - attrSpent();
@@ -1543,7 +1623,9 @@
     note.textContent = maxed
       ? 'Fully mastered — this technique has reached its limit.'
       : 'Lvl ' + (node.level + 1) + ': amplifies this technique\'s power and aura efficiency.';
-    document.getElementById('ttLock').textContent = locked ? 'Locked — double-click to unlock the path' : (node.allocated ? 'Level ' + node.level + ' / ' + MAX_LEVEL : 'Available — double-click to learn');
+    document.getElementById('ttLock').textContent = !inReach(node)
+      ? 'Out of reach — ' + node.type + ' affinity ' + affinityFor(node.type) + '%'
+      : (locked ? 'Locked — double-click to unlock the path' : (node.allocated ? 'Level ' + node.level + ' / ' + MAX_LEVEL : 'Available — double-click to learn'));
     document.getElementById('ttPreviewHead').style.color = c;
     document.getElementById('ttOrb').style.background =
       `radial-gradient(circle at 50% 55%, ${c} 0%, rgba(13,11,26,0) 68%), radial-gradient(circle at 50% 50%, rgba(255,255,255,.25) 0%, rgba(13,11,26,.1) 30%, #0d0b1a 100%)`;
@@ -1586,13 +1668,18 @@
     const parent = parentOf(node);
     const maxed = node.level >= MAX_LEVEL;
     const chainLen = node.allocated ? 0 : chainTo(node).length;
-    const desc = locked
+    const outOfReach = !inReach(node) && !node.allocated;
+    const desc = outOfReach
+      ? 'Beyond your reach. Your primary Nen type caps ' + node.type + ' at ' + affinityFor(node.type) + '% — this technique lies past that limit.'
+      : locked
       ? 'Sealed behind "' + parent.label + '". Unlock the path to learn all ' + chainLen + ' skills leading here at once.'
       : node.allocated
         ? node.label + ' Lv ' + node.level + ' — ' + node.type + ' technique. ' + (maxed ? 'Fully mastered.' : 'Upgrade to deepen its power (max Lv ' + MAX_LEVEL + ').')
         : node.type + ' technique. Allocate to awaken it at Lv 1.';
     let actions;
-    if(!node.allocated){
+    if(outOfReach){
+      actions = '<span class="skill-locked-tag">Out of Reach</span>';
+    } else if(!node.allocated){
       actions = `<button class="btn-allocate alloc" id="allocateBtn" style="background:${node.color}; border-color:${node.color}; color:#0d0b1a">${chainLen > 1 ? 'Unlock Path' : 'Allocate'}</button>`;
     } else {
       actions = `
@@ -2165,7 +2252,7 @@
 
   function buildCode(){
     return encodeData({
-      v:1, r:raceIndex, p:skillPoints, c:clanIndex,
+      v:1, r:raceIndex, p:skillPoints, c:clanIndex, nt:nenPrimary,
       l:nodes.map(n => n.level),
       a:ATTR_STATS.map(s => attrValues[s.id]),
       b:BP_STATS.map(s => bpValues[s.id]),
@@ -2192,6 +2279,7 @@
       });
       raceIndex = Math.max(0, Math.min(RACES.length - 1, data.r | 0));
       clanIndex = Math.max(0, Math.min(clansFor().length - 1, data.c | 0));
+      nenPrimary = data.nt === undefined ? -1 : Math.max(-1, Math.min(NEN_TYPES.length - 1, data.nt | 0));
       skillPoints = Math.max(0, Math.min(99999, data.p | 0));
       document.getElementById('skillPointsVal').textContent = skillPoints;
       selectedNodeId = null;
@@ -2236,10 +2324,11 @@
   document.querySelectorAll('.hub-card').forEach(card => {
     card.addEventListener('click', () => {
       const k = card.dataset.hub;
-      if(k === 'soon'){ showToast('Coming soon'); return; }
       hubModal.classList.add('hidden');
       if(k === 'race'){
         document.getElementById('raceMenu').classList.remove('hidden');
+      } else if(k === 'nentype'){
+        document.getElementById('nenTypeMenu').classList.remove('hidden');
       } else if(k === 'menu'){
         document.getElementById('selectMenu').classList.remove('hidden');
       } else if(k === 'char'){
@@ -2433,10 +2522,42 @@
     card.addEventListener('click', () => {
       if(card.dataset.choice === 'skills'){
         document.getElementById('selectMenu').classList.add('hidden');
+        if(nenPrimary < 0) document.getElementById('nenTypeMenu').classList.remove('hidden');
       } else {
         showToast('Coming soon — enter Nen Skills for now');
       }
     });
+  });
+
+  /* ---------- primary nen type picker ---------- */
+  const AFF_ORDER = ['Enhancement','Transmutation','Conjuration','Specialization','Manipulation','Emission'];
+  const nenCardsWrap = document.getElementById('nenTypeCards');
+  NEN_TYPES.forEach((t, i) => {
+    const card = document.createElement('div');
+    card.className = 'nen-card';
+    card.style.setProperty('--nc', t.color);
+    card.style.setProperty('--nc-glow', t.color + '44');
+    const rows = AFF_ORDER.map(pathName => {
+      const sec = SECTORS.find(s => s.name === pathName);
+      return `<div><span style="color:${sec.color}">${KANJI[pathName]} ${pathName.slice(0, 7)}</span><span class="pv">${t.aff[pathName]}%</span></div>`;
+    }).join('');
+    card.innerHTML = `
+      <div class="nk" style="color:${t.color}; text-shadow:0 0 22px ${t.color}">${t.kanji}</div>
+      <div class="nn">${t.name}</div>
+      <div class="nen-aff">${rows}</div>`;
+    card.addEventListener('click', () => {
+      nenPrimary = i;
+      document.getElementById('nenTypeMenu').classList.add('hidden');
+      // if the current build now exceeds an affinity cap, it has to start over
+      if(nodes.some(n => n.allocated && !inReach(n))){
+        resetBuild();
+        showToast(t.name + ' chosen — build reset by your new affinity limits');
+      } else {
+        showToast('Primary Nen: ' + t.name);
+      }
+      refresh(null);
+    });
+    nenCardsWrap.appendChild(card);
   });
 
   /* ---------- init ---------- */
