@@ -347,13 +347,7 @@
   }
   .toast.show{ opacity:1; }
 
-  /* ---- race selection screen ---- */
-  .race-menu{
-    position:fixed; inset:0; z-index:16; overflow:auto;
-    background: radial-gradient(ellipse at 50% 40%, rgba(16,13,30,.97) 0%, rgba(5,5,12,1) 100%);
-    display:flex; flex-direction:column; align-items:center; padding:48px 20px 40px;
-  }
-  .race-menu.hidden{ display:none; }
+  /* ---- shared menu title styles ---- */
   .race-title{
     font-family:'Cinzel',serif; font-weight:900; font-size:30px; letter-spacing:.35em; text-indent:.35em;
     color:#fff; text-shadow:0 0 24px rgba(79,195,255,.5);
@@ -368,43 +362,6 @@
     color:var(--gold-bright); font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
   }
   .btn-discord:hover{ background: rgba(79,195,255,.24); }
-  .race-cards{ display:flex; gap:24px; margin-top:34px; flex-wrap:wrap; justify-content:center; }
-  .race-card{
-    width:270px; cursor:pointer; position:relative;
-    background: linear-gradient(180deg, rgba(30,26,48,.6), rgba(10,8,20,.95));
-    border:1px solid transparent;
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-    display:flex; flex-direction:column;
-  }
-  .race-card:hover{ transform:translateY(-8px); border-color:var(--race-c, var(--gold-bright)); box-shadow:0 10px 40px rgba(0,0,0,.6), 0 0 24px var(--race-glow, rgba(79,195,255,.25)); }
-  .race-name{
-    position:absolute; top:0; left:0; right:0; z-index:2; pointer-events:none;
-    font-family:'Cinzel',serif; font-size:19px; font-weight:700; letter-spacing:.06em;
-    color:#fff; padding:14px 16px 30px;
-    background: linear-gradient(180deg, rgba(7,7,14,.94) 0%, rgba(7,7,14,.55) 55%, transparent 100%);
-    text-shadow: 0 2px 10px rgba(0,0,0,.85);
-  }
-  .race-art{
-    height:270px; display:flex; align-items:center; justify-content:center;
-    overflow:hidden; position:relative;
-  }
-  /* pointer-events off so the browser's image hover tools (visual search etc.) never trigger */
-  .race-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; pointer-events:none; user-select:none; }
-  .race-img.fit-contain{ object-fit:contain; padding:26px; }
-  .race-img.fade-left{
-    -webkit-mask-image: linear-gradient(100deg, transparent 4%, #000 52%);
-    mask-image: linear-gradient(100deg, transparent 4%, #000 52%);
-  }
-  .race-img.fade-bottom{
-    -webkit-mask-image: linear-gradient(180deg, #000 68%, transparent 100%);
-    mask-image: linear-gradient(180deg, #000 68%, transparent 100%);
-  }
-  .race-img.darkened{ filter: brightness(.62) contrast(1.22) saturate(1.12); }
-  .race-img.fade-bottom-soft{
-    -webkit-mask-image: linear-gradient(180deg, #000 86%, transparent 100%);
-    mask-image: linear-gradient(180deg, #000 86%, transparent 100%);
-  }
-  .race-desc{ font-size:12px; line-height:1.55; color:#bfb6d4; padding:14px 16px 18px; }
   /* ---- primary nen type picker ---- */
   .nen-type-menu{
     position:fixed; inset:0; z-index:17; overflow:hidden;
@@ -781,13 +738,6 @@
 </div>
 <svg id="treeSvg"></svg>
 
-<!-- race selection screen (opened via 念 hub → Change Race) -->
-<div class="race-menu hidden" id="raceMenu">
-  <div class="race-title">CHOOSE YOUR RACE</div>
-  <div class="race-sub">YOUR RACE SHAPES YOUR FUTURE</div>
-  <div class="race-cards" id="raceCards"></div>
-</div>
-
 <!-- primary nen type selection (shown when entering the nen tree) -->
 <div class="nen-type-menu hidden" id="nenTypeMenu">
   <div class="race-title">CHOOSE YOUR NEN TYPE</div>
@@ -938,7 +888,6 @@
       <button class="char-close" id="hubClose">✕</button>
     </div>
     <div class="hub-cards">
-      <button class="hub-card" data-hub="race"><div class="hub-icon">狩</div>Change Race</button>
       <button class="hub-card" data-hub="char"><div class="hub-icon">◈</div>Character</button>
       <button class="hub-card" data-hub="menu"><div class="hub-icon">☰</div>Main Menu</button>
       <button class="hub-card" data-hub="builds"><div class="hub-icon">♛</div>Popular Builds</button>
@@ -1521,8 +1470,8 @@
   function updateLevelHud(){
     document.querySelector('.char-lvl').textContent = 'LVL ' + charLevel();
     const raceEl = document.getElementById('charRace');
-    if(raceEl && typeof RACES !== 'undefined'){
-      raceEl.textContent = '◆ Level ' + charLevel() + ' ' + RACES[raceIndex].name;
+    if(raceEl){
+      raceEl.textContent = '◆ Level ' + charLevel() + ' Hunter';
     }
   }
 
@@ -1963,117 +1912,8 @@
     }
   }
 
-  /* ---------- races ---------- */
-  const RACES = [
-    { name:'Hunter', kanji:'狩', color:'#3ee0b0',
-      desc:'Licensed by the Association. Years of disciplined Ten and Ren training grant steady, balanced growth across every Nen discipline.',
-      base:{ hp:200, aura:110, stam:110, focus:110 },
-      img:'img/hunter-logo.png', imgFit:'contain',
-      // clean hunter green
-      bg:`radial-gradient(circle at 50% 42%, #1a5c40 0%, #0e3a28 55%, #082418 100%)`,
-      // license emblem: twin marks crossing behind a crimson pentagon
-      art:`<svg viewBox="0 0 220 130" style="width:82%; filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))">
-        <g stroke="#f2efe6" stroke-width="21" stroke-linecap="square" fill="none">
-          <path d="M22 14 L86 116"/><path d="M86 14 L22 116"/>
-          <path d="M134 14 L198 116"/><path d="M198 14 L134 116"/>
-        </g>
-        <g stroke="#12100a" stroke-width="12" stroke-linecap="square" fill="none">
-          <path d="M22 14 L86 116"/><path d="M86 14 L22 116"/>
-          <path d="M134 14 L198 116"/><path d="M198 14 L134 116"/>
-        </g>
-        <polygon points="110,24 153,57 137,113 83,113 67,57" fill="#c22a3d" stroke="#f2efe6" stroke-width="4"/>
-      </svg>` },
-    { name:'Chimera', kanji:'獣', color:'#c75bff',
-      desc:'Born of the swarm. Inhuman vitality and predatory instinct — your aura burns hotter and hits harder, but is far harder to control.',
-      base:{ hp:280, aura:130, stam:95, focus:70 },
-      img:'img/chimera.jpg', imgClass:'fade-bottom-soft darkened', imgPos:'50% 92%',
-      bg:`radial-gradient(circle at 50% 30%, #101418 0%, #080a0d 60%, #030405 100%)`,
-      // the brood beneath a radiant crown — abstract silhouettes, no text
-      art:`<svg viewBox="0 0 240 270" style="width:100%;height:100%" preserveAspectRatio="xMidYMid slice">
-        <rect width="240" height="270" fill="#c8cecb"/>
-        <g stroke="#4fc3ff" fill="none" opacity=".85">
-          <circle cx="120" cy="56" r="24" stroke-width="3"/>
-          <circle cx="120" cy="56" r="40" stroke-width="1.6"/>
-          <g stroke-width="2">
-            <line x1="164" y1="56" x2="180" y2="56"/><line x1="76" y1="56" x2="60" y2="56"/>
-            <line x1="120" y1="12" x2="120" y2="0"/><line x1="120" y1="100" x2="120" y2="112"/>
-            <line x1="151" y1="87" x2="162" y2="98"/><line x1="89" y1="87" x2="78" y2="98"/>
-            <line x1="151" y1="25" x2="162" y2="14"/><line x1="89" y1="25" x2="78" y2="14"/>
-          </g>
-        </g>
-        <circle cx="120" cy="92" r="13" fill="#4d8060"/><rect x="96" y="106" width="48" height="96" rx="12" fill="#3f6b50"/>
-        <circle cx="58" cy="128" r="12" fill="#a34a58"/><rect x="38" y="141" width="40" height="90" rx="11" fill="#94404e"/>
-        <circle cx="182" cy="126" r="12" fill="#d9d3b9"/><rect x="163" y="139" width="38" height="92" rx="11" fill="#cec7aa"/>
-        <path d="M112 146 L117 136 L121 146 Z" fill="#efeef2"/><path d="M128 146 L123 136 L119 146 Z" fill="#efeef2"/>
-        <circle cx="120" cy="156" r="11" fill="#efeef2"/><rect x="102" y="168" width="36" height="76" rx="10" fill="#e3e1e8"/>
-        <ellipse cx="120" cy="252" rx="86" ry="10" fill="#9aa39e" opacity=".55"/>
-      </svg>` },
-    { name:'Rogue Hunter', kanji:'影', color:'#8fa0c0',
-      desc:'No license. No rules. You survive on stolen techniques, quick feet and raw stamina, thriving in the cracks the Association can\'t reach.',
-      base:{ hp:190, aura:95, stam:150, focus:95 },
-      img:'img/rogue.avif', imgClass:'fade-left',
-      bg:`linear-gradient(180deg, #05060c, #030408)`,
-      // a crew of shadows beneath the spider's mark
-      art:`<svg viewBox="0 0 240 270" style="width:100%;height:100%" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <radialGradient id="rgRogue" cx="50%" cy="40%" r="60%">
-            <stop offset="0%" stop-color="#7a4fb0" stop-opacity=".85"/>
-            <stop offset="45%" stop-color="#2c2350" stop-opacity=".5"/>
-            <stop offset="100%" stop-color="#0a0d18" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <rect width="240" height="270" fill="#0a0d18"/>
-        <circle cx="120" cy="105" r="125" fill="url(#rgRogue)"/>
-        <g fill="#cfe0ff" opacity=".14">
-          <polygon points="120,270 94,108 110,108"/>
-          <polygon points="62,270 56,120 74,124"/>
-          <polygon points="182,270 166,124 184,120"/>
-          <polygon points="28,270 18,152 36,155"/>
-          <polygon points="214,270 204,155 222,152"/>
-          <polygon points="152,270 130,110 144,110"/>
-        </g>
-        <g stroke="#060810" stroke-width="7" fill="none" stroke-linecap="round">
-          <path d="M98 72 C76 56 62 40 54 20"/>
-          <path d="M97 85 C68 82 48 70 34 52"/>
-          <path d="M99 97 C72 104 52 102 36 92"/>
-          <path d="M142 72 C164 56 178 40 186 20"/>
-          <path d="M143 85 C172 82 192 70 206 52"/>
-          <path d="M141 97 C168 104 188 102 204 92"/>
-        </g>
-        <ellipse cx="120" cy="86" rx="23" ry="30" fill="#060810"/>
-        <circle cx="120" cy="50" r="13" fill="#060810"/>
-        <g fill="#04050c">
-          <rect x="28" y="198" width="16" height="52" rx="6"/><circle cx="36" cy="191" r="8"/>
-          <rect x="56" y="190" width="18" height="60" rx="7"/><circle cx="65" cy="182" r="9"/>
-          <rect x="88" y="198" width="15" height="52" rx="6"/><circle cx="95" cy="191" r="8"/>
-          <rect x="112" y="184" width="20" height="66" rx="8"/><circle cx="122" cy="175" r="10"/>
-          <rect x="146" y="196" width="16" height="54" rx="6"/><circle cx="154" cy="189" r="8"/>
-          <rect x="174" y="192" width="17" height="58" rx="7"/><circle cx="182" cy="184" r="9"/>
-          <rect x="202" y="199" width="15" height="51" rx="6"/><circle cx="209" cy="192" r="8"/>
-        </g>
-      </svg>` },
-  ];
-  let raceIndex = 0;
-
-  const raceCardsWrap = document.getElementById('raceCards');
-  RACES.forEach((race, i) => {
-    const card = document.createElement('div');
-    card.className = 'race-card';
-    card.style.setProperty('--race-c', race.color);
-    card.style.setProperty('--race-glow', race.color + '44');
-    card.innerHTML = `
-      <div class="race-name">${race.name}</div>
-      <div class="race-art" style="background:${race.bg}">${race.art || ''}${race.img ? `<img class="race-img${race.imgFit === 'contain' ? ' fit-contain' : ''}${race.imgClass ? ' ' + race.imgClass : ''}" src="${race.img}" alt="" draggable="false"${race.imgPos ? ` style="object-position:${race.imgPos}"` : ''} onerror="this.remove()" onload="this.parentElement.querySelector('svg') && this.parentElement.querySelector('svg').remove()">` : ''}</div>
-      <div class="race-desc">${race.desc}</div>`;
-    card.addEventListener('click', () => {
-      const hadProgress = nodes.some(n => n.allocated);
-      raceIndex = i;
-      resetBuild();   // a new path means a fresh build (also resets the race-locked clan)
-      document.getElementById('raceMenu').classList.add('hidden');
-      showToast('Path of the ' + race.name + ' chosen' + (hadProgress ? ' — build reset' : ''));
-    });
-    raceCardsWrap.appendChild(card);
-  });
+  /* ---------- character base stats ---------- */
+  const BASE_STATS = { hp:200, aura:110, stam:110, focus:110 };
 
   /* ---------- character menu: gear + build stats ---------- */
   const STAT_META = [
@@ -2137,29 +1977,21 @@
   ];
   const equipState = [0,0,0,0,0];
 
-  // clans are race-locked — index matches RACES order: Hunter, Chimera, Rogue Hunter
-  const CLANS_BY_RACE = [
-    [ // Hunter
-      { name:'No Clan', b:{} },
-      { name:'Freecss Family', b:{hp:12, stam:10} },
-      { name:'Kurta Clan', b:{focus:15, aura:8} },
-      { name:'Nostrade Family', b:{focus:12} },
-      { name:'Hui Guo Rou Royals', b:{hp:10, aura:12} },
-    ],
-    [ // Chimera
-      { name:'No Clan', b:{} },
-      { name:'Royal Bloodline', b:{hp:20, aura:15, focus:-8} },
-      { name:'Royal Guard', b:{hp:25, stam:-5} },
-      { name:'Squadron Leader', b:{hp:12, stam:8} },
-    ],
-    [ // Rogue Hunter
-      { name:'No Clan', b:{} },
-      { name:'Phantom Troupe', b:{stam:12, focus:10} },
-      { name:'Zoldyck Family', b:{stam:18} },
-      { name:'Meteor City Outcasts', b:{hp:10, stam:8} },
-    ],
+  // one open clan roster — each carries a small heritage bonus
+  const CLANS = [
+    { name:'No Clan', b:{} },
+    { name:'Freecss Family', b:{hp:12, stam:10} },
+    { name:'Kurta Clan', b:{focus:15, aura:8} },
+    { name:'Nostrade Family', b:{focus:12} },
+    { name:'Hui Guo Rou Royals', b:{hp:10, aura:12} },
+    { name:'Royal Bloodline', b:{hp:20, aura:15, focus:-8} },
+    { name:'Royal Guard', b:{hp:25, stam:-5} },
+    { name:'Squadron Leader', b:{hp:12, stam:8} },
+    { name:'Phantom Troupe', b:{stam:12, focus:10} },
+    { name:'Zoldyck Family', b:{stam:18} },
+    { name:'Meteor City Outcasts', b:{hp:10, stam:8} },
   ];
-  function clansFor(){ return CLANS_BY_RACE[raceIndex] || CLANS_BY_RACE[0]; }
+  function clansFor(){ return CLANS; }
   let clanIndex = 0;
 
   function bonusText(b){
@@ -2171,7 +2003,7 @@
   }
 
   function buildStats(){
-    const s = Object.assign({}, RACES[raceIndex].base);
+    const s = Object.assign({}, BASE_STATS);
     EQUIP_SLOTS.forEach((slot, i) => {
       const b = slot.items[equipState[i]].b;
       for(const k in b) s[k] += b[k];
@@ -2233,10 +2065,9 @@
   function renderCharacter(){
     rebuildClanOptions();
     clanSelect.value = clanIndex;
-    const race = RACES[raceIndex];
     const raceEl = document.getElementById('charRace');
-    raceEl.textContent = '◆ Level ' + charLevel() + ' ' + race.name;
-    raceEl.style.color = race.color;
+    raceEl.textContent = '◆ Level ' + charLevel() + ' Hunter';
+    raceEl.style.color = 'var(--gold-bright)';
     const slotsWrap = document.getElementById('charSlots');
     slotsWrap.innerHTML = '';
     EQUIP_SLOTS.forEach((slot, i) => {
@@ -2341,7 +2172,7 @@
 
   function buildCode(){
     return encodeData({
-      v:1, r:raceIndex, p:skillPoints, c:clanIndex, nt:nenPrimary,
+      v:1, p:skillPoints, c:clanIndex, nt:nenPrimary,
       l:nodes.map(n => n.level),
       a:ATTR_STATS.map(s => attrValues[s.id]),
       b:BP_STATS.map(s => bpValues[s.id]),
@@ -2366,7 +2197,6 @@
       (data.e || []).forEach((v, i) => {
         if(EQUIP_SLOTS[i]) equipState[i] = Math.max(0, Math.min(EQUIP_SLOTS[i].items.length - 1, v | 0));
       });
-      raceIndex = Math.max(0, Math.min(RACES.length - 1, data.r | 0));
       clanIndex = Math.max(0, Math.min(clansFor().length - 1, data.c | 0));
       nenPrimary = data.nt === undefined ? -1 : Math.max(-1, Math.min(NEN_TYPES.length - 1, data.nt | 0));
       skillPoints = Math.max(0, Math.min(99999, data.p | 0));
@@ -2379,7 +2209,6 @@
 
   function enterTree(){
     document.getElementById('intro')?.remove();
-    document.getElementById('raceMenu')?.classList.add('hidden');
     document.getElementById('selectMenu')?.classList.add('hidden');
   }
 
@@ -2414,9 +2243,7 @@
     card.addEventListener('click', () => {
       const k = card.dataset.hub;
       hubModal.classList.add('hidden');
-      if(k === 'race'){
-        document.getElementById('raceMenu').classList.remove('hidden');
-      } else if(k === 'nentype'){
+      if(k === 'nentype'){
         document.getElementById('nenTypeMenu').classList.remove('hidden');
       } else if(k === 'menu'){
         document.getElementById('selectMenu').classList.remove('hidden');
@@ -2456,12 +2283,12 @@
       return;
     }
     all.forEach((b, i) => {
-      const race = RACES[b.r] || RACES[0];
+      const ntype = NEN_TYPES[b.nt];
       const card = document.createElement('div');
       card.className = 'pb-card';
       card.innerHTML = `
         <div class="pb-rank">#${i + 1}</div>
-        <span class="pb-race" style="color:${race.color}; border-color:${race.color}66">${race.name}</span>
+        ${ntype ? `<span class="pb-race" style="color:${ntype.color}; border-color:${ntype.color}66">${ntype.name}</span>` : ''}
         <div class="pb-name">${escHTML(b.name)}${b.mine ? ' ◆' : ''}</div>
         <div class="pb-meta">
           <span>👁 ${b.views.toLocaleString()}</span>
@@ -2525,7 +2352,7 @@
     const post = () => {
       const name = inp.value.trim() || 'Unnamed Build';
       const list = getPublished();
-      list.push({ name, r: raceIndex, code: buildCode(), likes: 0, views: 0 });
+      list.push({ name, nt: nenPrimary, code: buildCode(), likes: 0, views: 0 });
       setPublished(list);
       wrap.replaceWith(pbPublishBtn);
       renderPB();
