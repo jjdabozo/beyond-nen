@@ -1,0 +1,2482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beyond Nen — Skill Tree</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Serif+JP:wght@700&family=Rye&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a18;
+    --panel-bg: rgba(16,13,30,.86);
+    --panel-border: rgba(212,175,55,.55);
+    --panel-border-dim: rgba(212,175,55,.18);
+    --gold:#d4af37;
+    --gold-bright:#f2d16b;
+    --gold-deep:#8a6d1f;
+    --text-dim:#a08c55;
+    --text:#ecdfb8;
+    --danger:#c9503f;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background: radial-gradient(ellipse at 50% 42%, #1b1733 0%, #110f24 50%, #080814 100%);
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .stars{ position:fixed; inset:0; z-index:0; }
+  .star{
+    position:absolute; border-radius:50%;
+    animation: twinkle var(--d,4s) ease-in-out infinite;
+  }
+  @keyframes twinkle{ 0%,100%{ opacity:.9; } 50%{ opacity:.18; } }
+
+  /* ---- faded Beyond Nen emblem behind the tree ---- */
+  .watermark{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .wm-ring{
+    position:absolute; width:640px; height:640px; border-radius:50%;
+    border:2px solid rgba(232,200,90,.10);
+    box-shadow: inset 0 0 0 18px rgba(232,200,90,.035), 0 0 0 40px rgba(232,200,90,.025);
+  }
+  .wm-ring::after{
+    content:''; position:absolute; inset:26px; border-radius:50%;
+    border:1px dashed rgba(232,200,90,.09);
+  }
+  .wm-kanji{
+    font-family:'Noto Serif JP', serif; font-size:380px; line-height:1;
+    color: rgba(232,200,90,.09); user-select:none;
+  }
+  .wm-text{
+    font-family:'Cinzel', serif; font-weight:900; font-size:40px; letter-spacing:.55em;
+    color: rgba(232,200,90,.11); margin-top:6px; text-indent:.55em; user-select:none;
+  }
+
+  #treeSvg{
+    position:fixed; inset:0; width:100%; height:100%; z-index:1;
+    shape-rendering: geometricPrecision; text-rendering: geometricPrecision;
+    cursor:grab; touch-action:none;
+  }
+  #treeSvg.dragging{ cursor:grabbing; }
+
+  .panel{
+    position:fixed; background: var(--panel-bg); border:1px solid var(--panel-border);
+    border-radius:4px; padding:14px 16px; z-index:5;
+    box-shadow: 0 0 24px rgba(212,175,55,.06), inset 0 0 0 1px rgba(0,0,0,.4);
+    backdrop-filter: blur(3px);
+  }
+  /* node unlock pop */
+  #treeSvg polygon.pop{
+    transform-box: fill-box; transform-origin: center;
+    animation: nodePop .5s cubic-bezier(.2, 1.4, .4, 1);
+  }
+  @keyframes nodePop{ 0%{ transform:scale(.3); } 70%{ transform:scale(1.22); } 100%{ transform:scale(1); } }
+  .eyebrow{ font-size:10px; letter-spacing:.16em; color: var(--text-dim); text-transform:uppercase; font-weight:600; }
+  .divider-title{ display:flex; align-items:center; gap:14px; justify-content:center; }
+  .divider-title .line{ width:70px; height:1px; background: linear-gradient(90deg, transparent, var(--gold)); }
+  .divider-title .line.right{ background: linear-gradient(90deg, var(--gold), transparent); }
+  .divider-title h1{
+    font-family:'Cinzel', serif; font-size:17px; letter-spacing:.3em; margin:0;
+    color: var(--gold-bright); text-transform:uppercase; font-weight:700;
+    text-shadow: 0 0 14px rgba(212,175,55,.45);
+  }
+
+  /* ---- top-left: character + build points (borderless) ---- */
+  .hud-left-top{
+    top:18px; left:18px; width:270px;
+    border:none; box-shadow:none; background:transparent; backdrop-filter:none;
+  }
+  .char-lvl{ font-family:'Cinzel', serif; font-size:30px; color:var(--gold-bright); letter-spacing:.05em; margin-top:2px; }
+  .bp-head{ display:flex; justify-content:space-between; align-items:baseline; margin:16px 0 8px; font-size:11px; letter-spacing:.1em; color: var(--text-dim); text-transform:uppercase; }
+  .bp-head .val{ font-family:'JetBrains Mono',monospace; color:var(--gold-bright); font-size:13px; }
+  .bp-track{ height:3px; background: rgba(212,175,55,.14); border-radius:2px; margin-bottom:12px; overflow:hidden; }
+  .bp-track-fill{ height:100%; background: linear-gradient(90deg, var(--gold-deep), var(--gold-bright)); transition: width .25s ease; }
+  .stat-row{ display:flex; align-items:center; gap:8px; padding:5px 0; }
+  .stat-bar{ width:3px; height:14px; border-radius:2px; flex-shrink:0; background:var(--gold); }
+  .stat-name{ flex:1; font-size:12.5px; font-weight:500; }
+  .stepper{ display:flex; align-items:center; gap:6px; }
+  .stepper button{
+    width:20px; height:20px; border-radius:3px; border:1px solid var(--panel-border);
+    background: rgba(212,175,55,.05); color: var(--gold-bright); cursor:pointer; font-size:12px; line-height:1;
+  }
+  .stepper button:hover:not(:disabled){ background: rgba(212,175,55,.18); }
+  .stepper button:disabled{ opacity:.25; cursor:not-allowed; }
+  .stepper .val{ font-family:'JetBrains Mono',monospace; width:24px; text-align:center; font-size:12px; color:var(--text); cursor:pointer; }
+
+  /* ---- bottom-left: attributes radar (borderless) ---- */
+  .hud-left-bottom{
+    bottom:18px; left:18px; width:320px;
+    border:none; box-shadow:none; background:transparent; backdrop-filter:none;
+  }
+  .diamond-wrap{ position:relative; width:100%; height:280px; margin-top:10px; }
+  #attrRadar{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    pointer-events:none;
+  }
+  .attr-node{ position:absolute; text-align:center; }
+  .attr-node .attr-label{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.12em; color: var(--gold); text-transform:uppercase; margin-bottom:7px; }
+  .attr-node .stepper{ justify-content:center; gap:6px; }
+  .attr-top{ top:4px; left:50%; transform:translateX(-50%); }
+  .attr-right{ top:50%; right:0; transform:translateY(-50%); }
+  .attr-bottom{ bottom:4px; left:50%; transform:translateX(-50%); }
+  .attr-left{ top:50%; left:0; transform:translateY(-50%); }
+
+  /* ---- top center ---- */
+  .hud-top-center{ top:16px; left:50%; transform:translateX(-50%); z-index:5; display:flex; flex-direction:column; align-items:center; gap:12px; position:fixed; }
+  .pill-row{ display:flex; gap:10px; }
+  .pill{
+    display:flex; align-items:center; gap:8px; padding:7px 16px; border-radius:2px;
+    background: var(--panel-bg); border:1px solid var(--panel-border); font-size:11px;
+    letter-spacing:.1em; text-transform:uppercase; color: var(--text-dim);
+  }
+  .pill .val{ font-family:'JetBrains Mono',monospace; color:var(--gold-bright); font-size:13px; font-weight:600; }
+  #skillPointsPill{ cursor:pointer; user-select:none; }
+  .sp-input{
+    width:64px; background:transparent; border:none; border-bottom:1px solid var(--gold);
+    color:var(--gold-bright); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600;
+    text-align:center; outline:none;
+  }
+  .sp-input::-webkit-outer-spin-button, .sp-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .search-box{
+    width:340px; display:flex; align-items:center; gap:8px; padding:9px 14px; border-radius:2px;
+    background: var(--panel-bg); border:1px solid var(--panel-border);
+  }
+  .search-box input{
+    flex:1; background:transparent; border:none; color: var(--text); font-size:12.5px; font-family:'Inter';
+  }
+  .search-box input:focus{ outline:none; }
+  .search-box input::placeholder{ color: var(--text-dim); }
+  .search-icon{ color: var(--gold); font-size:13px; }
+
+  /* ---- top-right: character button ---- */
+  .char-open{
+    position:fixed; top:18px; right:18px; z-index:6;
+    padding:10px 18px; border-radius:2px;
+    background: var(--panel-bg); border:1px solid var(--panel-border);
+    color:var(--gold-bright); font-family:'Cinzel',serif; font-size:12px; font-weight:700;
+    letter-spacing:.12em; text-transform:uppercase; cursor:pointer;
+  }
+  .char-open:hover{ border-color:var(--gold-bright); box-shadow:0 0 14px rgba(212,175,55,.3); }
+  .btn-gold{
+    width:100%; display:flex; justify-content:space-between; align-items:center;
+    padding:10px 12px; border-radius:2px; border:1px solid var(--panel-border);
+    background: rgba(212,175,55,.08); color:var(--gold-bright); font-size:11.5px; letter-spacing:.04em;
+    cursor:pointer; margin-bottom:8px; text-transform:uppercase; font-weight:600;
+  }
+  .btn-gold:hover{ background: rgba(212,175,55,.18); }
+  .btn-gold .cost{ font-family:'JetBrains Mono',monospace; color:#0a0803; background: var(--gold); padding:1px 7px; border-radius:2px; font-size:11px; }
+
+  /* ---- bottom-right: skill info (borderless) ---- */
+  .hud-right-bottom{
+    bottom:18px; right:18px; width:330px; min-height:76px;
+    border:none; box-shadow:none; background:rgba(16,13,30,.72);
+  }
+  .skill-empty{ text-align:center; color: var(--text-dim); font-size:12px; padding:10px 0; }
+  .skill-empty .big{ display:block; font-family:'Cinzel',serif; font-size:13px; letter-spacing:.08em; text-transform:uppercase; color: var(--gold); margin-bottom:6px; }
+  .skill-detail-name{ font-family:'Cinzel', serif; font-size:16px; margin-bottom:2px; color:var(--gold-bright); }
+  .skill-detail-branch{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
+  .skill-detail-desc{ font-size:12px; color: var(--text-dim); line-height:1.5; margin-bottom:12px; }
+  .skill-detail-row{ display:flex; flex-direction:column; gap:12px; }
+  .skill-cost{ font-family:'JetBrains Mono',monospace; font-size:13px; color: var(--text-dim); letter-spacing:.02em; }
+  .skill-locked-tag{ font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--danger); border:1px solid rgba(201,80,63,.5); padding:2px 8px; border-radius:2px; }
+  .btn-allocate{
+    padding:10px 22px; border-radius:2px; cursor:pointer; font-weight:700; font-size:12px;
+    letter-spacing:.06em; text-transform:uppercase; font-family:'Cinzel', serif;
+  }
+  .btn-allocate.alloc{ background:var(--gold); color:#0a0803; border:1px solid var(--gold-bright); }
+  .btn-allocate.dealloc{ background:transparent; color:var(--danger); border:1px solid rgba(201,80,63,.55); }
+  .btn-allocate:disabled{ opacity:.35; cursor:not-allowed; }
+
+  /* ---- bottom center ---- */
+  .hud-bottom-center{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:5;
+    display:flex; align-items:center; gap:22px;
+  }
+  .btn-reset{
+    padding:10px 20px; border-radius:2px; border:1px solid rgba(201,80,63,.55);
+    background: rgba(201,80,63,.08); color: var(--danger); font-weight:700; font-size:12px;
+    letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
+  }
+  .monogram{
+    font-family:'Noto Serif JP', serif; font-size:26px; font-weight:700; color: var(--gold);
+    text-shadow: 0 0 14px rgba(212,175,55,.7);
+    background:none; border:none; cursor:pointer; padding:2px 10px; border-radius:50%;
+    transition: text-shadow .2s ease, transform .2s ease;
+  }
+  .monogram:hover{ text-shadow: 0 0 24px rgba(242,209,107,1); transform:scale(1.12); }
+  /* ---- hub menu + popular builds ---- */
+  .hub-modal, .pb-modal{
+    position:fixed; inset:0; z-index:13; display:flex; align-items:center; justify-content:center;
+    background: rgba(4,4,10,.72);
+  }
+  .hub-modal.hidden, .pb-modal.hidden{ display:none; }
+  .hub-panel{
+    width:640px; max-width:94vw; background:var(--panel-bg); border:1px solid var(--panel-border);
+    padding:20px 24px 26px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,.7);
+  }
+  .hub-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+  .hub-head h2{ margin:0; font-family:'Cinzel',serif; font-size:18px; letter-spacing:.25em; color:#fff; }
+  .hub-head span{ display:block; font-size:10px; letter-spacing:.28em; color:var(--text-dim); margin-top:4px; text-transform:uppercase; }
+  .hub-panel, .pb-panel, .char-panel{ animation: modalPop .22s ease-out; }
+  @keyframes modalPop{
+    from{ opacity:0; transform:translateY(12px) scale(.965); }
+    to{ opacity:1; transform:none; }
+  }
+  .hub-cards{ display:flex; gap:13px; }
+  .hub-card{
+    flex:1; padding:18px 6px 15px; background:rgba(212,175,55,.04);
+    border:1px solid var(--panel-border); border-radius:3px; cursor:pointer;
+    color:var(--text); font-family:'Cinzel',serif; font-size:11px; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase; text-align:center;
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .hub-card:hover{ border-color:var(--gold-bright); background:rgba(212,175,55,.12); transform:translateY(-3px); }
+  .hub-card .hub-icon{
+    display:flex; align-items:center; justify-content:center;
+    width:50px; height:50px; margin:0 auto 11px;
+    border:1px solid var(--panel-border); border-radius:6px;
+    font-size:22px; font-family:'Noto Serif JP',serif; color:var(--gold-bright);
+  }
+  .hub-card.locked{ opacity:.35; cursor:not-allowed; }
+  .hub-card.locked:hover{ transform:none; border-color:var(--panel-border); background:rgba(212,175,55,.04); }
+  .pb-panel{
+    width:880px; max-width:96vw; max-height:86vh; overflow-y:auto;
+    background:var(--panel-bg); border:1px solid var(--panel-border);
+    padding:20px 24px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,.7);
+  }
+  .pb-panel::-webkit-scrollbar{ width:7px; }
+  .pb-panel::-webkit-scrollbar-thumb{ background:var(--gold-deep); border-radius:3px; }
+  .pb-tabs{ display:flex; gap:10px; margin:2px 0 18px; align-items:center; }
+  .pb-tab{
+    padding:8px 16px; background:transparent; border:1px solid var(--panel-border);
+    color:var(--text-dim); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    cursor:pointer; font-weight:700;
+  }
+  .pb-tab.active{ color:var(--gold-bright); border-color:var(--gold); background:rgba(212,175,55,.1); }
+  .pb-publish{
+    margin-left:auto; padding:8px 16px; background:var(--gold); border:1px solid var(--gold-bright);
+    color:#0d0b1a; font-weight:700; font-size:11px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+  }
+  .pb-publish-input{ margin-left:auto; display:flex; gap:6px; }
+  .pb-publish-input input{
+    width:190px; padding:7px 10px; background:rgba(212,175,55,.05);
+    border:1px solid var(--gold); color:var(--text); font-size:11px; outline:none;
+  }
+  .pb-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:13px; }
+  .pb-card{
+    border:1px solid var(--panel-border); background:rgba(212,175,55,.03);
+    padding:12px 14px; cursor:pointer; position:relative;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .pb-card:hover{ border-color:var(--gold-bright); background:rgba(212,175,55,.09); }
+  .pb-rank{ position:absolute; top:9px; right:11px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--gold); }
+  .pb-race{
+    display:inline-block; font-size:9px; letter-spacing:.18em; font-weight:700; text-transform:uppercase;
+    padding:2px 8px; border:1px solid; border-radius:2px; margin-bottom:8px;
+  }
+  .pb-name{ font-family:'Cinzel',serif; font-size:14px; font-weight:700; color:#fff; margin-bottom:10px; }
+  .pb-meta{ display:flex; gap:8px; align-items:center; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-dim); }
+  .pb-like{
+    background:rgba(212,175,55,.08); border:1px solid var(--panel-border); color:var(--text);
+    padding:2px 8px; cursor:pointer; font-family:'JetBrains Mono',monospace; font-size:10.5px; border-radius:2px;
+  }
+  .pb-like:hover{ color:var(--gold-bright); border-color:var(--gold); }
+  .pb-code{ margin-left:auto; border:1px solid var(--panel-border); padding:2px 7px; border-radius:2px; font-size:10px; }
+  .pb-note{ margin-top:16px; font-size:10.5px; color:var(--text-dim); font-style:italic; text-align:center; }
+  .pb-empty{
+    grid-column:1 / -1; text-align:center; padding:44px 20px;
+    color:var(--text-dim); font-size:12.5px; line-height:1.6;
+    border:1px dashed var(--panel-border); border-radius:3px;
+  }
+  .btn-save{
+    padding:10px 22px; border-radius:2px; border:1px solid var(--gold);
+    background: rgba(212,175,55,.12); color: var(--gold-bright); font-weight:700; font-size:12px;
+    letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
+  }
+  .btn-save:hover, .btn-reset:hover{ filter:brightness(1.25); }
+  /* ---- hover skill card ---- */
+  .skill-tooltip{
+    position:fixed; z-index:9; display:none; pointer-events:none;
+    width:430px; padding:14px;
+    background: rgba(13,11,26,.96);
+    border:1px solid var(--gold);
+    border-radius:6px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.6), 0 0 22px rgba(212,175,55,.12);
+    grid-template-columns: 1fr 178px; gap:14px;
+  }
+  .skill-tooltip.show{ display:grid; }
+  .skill-tooltip.no-preview{ grid-template-columns:1fr; width:300px; }
+  .skill-tooltip.no-preview .tt-preview{ display:none; }
+  .tt-name{ font-family:'Cinzel', serif; font-size:17px; font-weight:700; letter-spacing:.04em; }
+  .tt-status{ font-size:10.5px; letter-spacing:.14em; color:#8a86a3; text-transform:uppercase; font-weight:600; margin:2px 0 10px; }
+  .tt-status.unlocked{ color:#3ee0b0; }
+  .tt-desc{ font-size:12px; color:#cfc9e4; line-height:1.5; margin-bottom:12px; }
+  .tt-label{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; font-weight:700; margin-bottom:4px; }
+  .tt-chip{
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:600;
+    padding:3px 10px; border-radius:3px; margin-bottom:11px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+  }
+  .tt-note{ font-size:11.5px; color:var(--gold-bright); font-weight:600; line-height:1.45; margin-bottom:10px; }
+  .tt-lock{ font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#8a86a3; font-weight:700; }
+  .tt-preview{ display:flex; flex-direction:column; border-radius:5px; overflow:hidden; border:1px solid rgba(255,255,255,.1); }
+  .tt-preview-head{
+    text-align:center; font-size:10px; letter-spacing:.24em; font-weight:700; padding:5px 0;
+    background:rgba(255,255,255,.05); text-transform:uppercase;
+  }
+  .tt-preview-orb{
+    flex:1; min-height:150px; display:flex; align-items:center; justify-content:center; position:relative;
+  }
+  .tt-kanji{
+    font-family:'Noto Serif JP', serif; font-size:64px; font-weight:700; color:#fff;
+    animation: kanjiPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes kanjiPulse{ 0%,100%{ transform:scale(1); opacity:.95; } 50%{ transform:scale(1.09); opacity:.75; } }
+
+  .toast{
+    position:fixed; bottom:70px; left:50%; transform:translateX(-50%); z-index:30;
+    background: rgba(16,13,30,.95); border:1px solid var(--panel-border); padding:8px 16px;
+    border-radius:2px; font-size:12px; color: var(--gold-bright); opacity:0; pointer-events:none; transition:opacity .3s ease;
+  }
+  .toast.show{ opacity:1; }
+
+  /* ---- race selection screen ---- */
+  .race-menu{
+    position:fixed; inset:0; z-index:16; overflow:auto;
+    background: radial-gradient(ellipse at 50% 40%, rgba(16,13,30,.97) 0%, rgba(5,5,12,1) 100%);
+    display:flex; flex-direction:column; align-items:center; padding:48px 20px 40px;
+  }
+  .race-menu.hidden{ display:none; }
+  .race-title{
+    font-family:'Cinzel',serif; font-weight:900; font-size:30px; letter-spacing:.35em; text-indent:.35em;
+    color:#fff; text-shadow:0 0 24px rgba(212,175,55,.5);
+  }
+  .race-sub{
+    font-family:'Cinzel',serif; font-size:11px; letter-spacing:.4em; text-indent:.4em;
+    color:var(--text-dim); margin-top:10px;
+  }
+  .btn-discord{
+    margin-top:22px; padding:10px 24px; border-radius:20px; text-decoration:none;
+    background: rgba(212,175,55,.12); border:1px solid var(--gold);
+    color:var(--gold-bright); font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  }
+  .btn-discord:hover{ background: rgba(212,175,55,.24); }
+  .race-cards{ display:flex; gap:24px; margin-top:34px; flex-wrap:wrap; justify-content:center; }
+  .race-card{
+    width:270px; cursor:pointer; position:relative;
+    background: linear-gradient(180deg, rgba(30,26,48,.6), rgba(10,8,20,.95));
+    border:1px solid transparent;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    display:flex; flex-direction:column;
+  }
+  .race-card:hover{ transform:translateY(-8px); border-color:var(--race-c, var(--gold-bright)); box-shadow:0 10px 40px rgba(0,0,0,.6), 0 0 24px var(--race-glow, rgba(212,175,55,.25)); }
+  .race-name{
+    position:absolute; top:0; left:0; right:0; z-index:2; pointer-events:none;
+    font-family:'Cinzel',serif; font-size:19px; font-weight:700; letter-spacing:.06em;
+    color:#fff; padding:14px 16px 30px;
+    background: linear-gradient(180deg, rgba(7,7,14,.94) 0%, rgba(7,7,14,.55) 55%, transparent 100%);
+    text-shadow: 0 2px 10px rgba(0,0,0,.85);
+  }
+  .race-art{
+    height:270px; display:flex; align-items:center; justify-content:center;
+    overflow:hidden; position:relative;
+  }
+  /* pointer-events off so the browser's image hover tools (visual search etc.) never trigger */
+  .race-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; pointer-events:none; user-select:none; }
+  .race-img.fit-contain{ object-fit:contain; padding:26px; }
+  .race-img.fade-left{
+    -webkit-mask-image: linear-gradient(100deg, transparent 4%, #000 52%);
+    mask-image: linear-gradient(100deg, transparent 4%, #000 52%);
+  }
+  .race-img.fade-bottom{
+    -webkit-mask-image: linear-gradient(180deg, #000 68%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 68%, transparent 100%);
+  }
+  .race-img.darkened{ filter: brightness(.62) contrast(1.22) saturate(1.12); }
+  .race-img.fade-bottom-soft{
+    -webkit-mask-image: linear-gradient(180deg, #000 86%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 86%, transparent 100%);
+  }
+  .race-desc{ font-size:12px; line-height:1.55; color:#bfb6d4; padding:14px 16px 18px; }
+  .race-load{ margin-top:36px; text-align:center; }
+  .race-load-label{ font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--text-dim); margin-bottom:10px; }
+  .race-load-row{ display:flex; }
+  .race-load-row input{
+    width:320px; padding:10px 14px; background:rgba(212,175,55,.04); border:1px solid var(--panel-border);
+    border-right:none; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:11.5px; outline:none;
+  }
+  .race-load-row button{
+    padding:10px 20px; background:var(--gold); border:1px solid var(--gold-bright); color:#0d0b1a;
+    font-weight:700; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+  }
+  .race-resume{
+    margin-top:14px; padding:9px 20px; background:transparent; border:1px solid var(--panel-border);
+    color:var(--text-dim); font-size:11px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; border-radius:2px;
+  }
+  .race-resume:hover{ color:var(--gold-bright); border-color:var(--gold); }
+  .race-resume.hidden{ display:none; }
+
+  /* ---- character menu ---- */
+  .char-modal{
+    position:fixed; inset:0; z-index:12; display:flex; align-items:center; justify-content:center;
+    background: rgba(4,4,10,.7);
+  }
+  .char-modal.hidden{ display:none; }
+  .char-panel{
+    width:680px; max-width:94vw; background:var(--panel-bg); border:1px solid var(--panel-border);
+    box-shadow:0 20px 60px rgba(0,0,0,.7), 0 0 30px rgba(212,175,55,.08); padding:18px 22px 14px;
+    position:relative;
+  }
+  .char-title{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:'Cinzel',serif; font-size:15px; font-weight:700; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--gold-bright); margin-bottom:16px;
+  }
+  .char-close{
+    background:transparent; border:1px solid var(--panel-border); color:var(--text-dim);
+    width:26px; height:26px; cursor:pointer; font-size:12px; border-radius:2px;
+  }
+  .char-close:hover{ color:var(--gold-bright); border-color:var(--gold); }
+  .char-grid{ display:grid; grid-template-columns: 190px 1fr 200px; gap:18px; align-items:stretch; }
+  .char-slots{ display:flex; flex-direction:column; gap:10px; }
+  .slot-holder{ position:relative; }
+  .char-slot{
+    width:100%;
+    border:1px dashed var(--panel-border); background:rgba(212,175,55,.03); border-radius:2px;
+    padding:9px 10px; cursor:pointer; text-align:left;
+  }
+  .gear-drop{
+    position:absolute; top:100%; left:0; right:-30px; z-index:6; margin-top:4px;
+    background:#12101f; border:1px solid var(--gold);
+    box-shadow:0 12px 34px rgba(0,0,0,.75); padding:8px;
+  }
+  .gear-search{
+    width:100%; padding:7px 9px; margin-bottom:6px;
+    background:rgba(212,175,55,.05); border:1px solid var(--panel-border);
+    color:var(--text); font-size:11.5px; font-family:'Inter',sans-serif; outline:none;
+  }
+  .gear-search:focus{ border-color:var(--gold); }
+  .gear-list{ max-height:168px; overflow-y:auto; }
+  .gear-list::-webkit-scrollbar{ width:6px; }
+  .gear-list::-webkit-scrollbar-thumb{ background:var(--gold-deep); border-radius:3px; }
+  .gear-list::-webkit-scrollbar-track{ background:rgba(255,255,255,.04); }
+  .gear-item{ padding:7px 9px; font-size:12px; cursor:pointer; color:var(--text); border-radius:2px; }
+  .gear-item:hover{ background:rgba(212,175,55,.15); color:var(--gold-bright); }
+  .gear-item.active{ color:var(--gold-bright); background:rgba(212,175,55,.08); }
+  .gear-item.active::after{ content:' ✓'; }
+  .gear-empty{ padding:8px; font-size:11px; color:var(--text-dim); text-align:center; }
+  .gear-tip{
+    position:fixed; z-index:40; display:none; pointer-events:none;
+    background:rgba(13,11,26,.97); border:1px solid var(--gold); border-radius:3px;
+    padding:9px 12px; min-width:160px; box-shadow:0 8px 26px rgba(0,0,0,.65);
+  }
+  .gear-tip.show{ display:block; }
+  .gt-name{ font-family:'Cinzel',serif; font-size:12.5px; font-weight:700; color:var(--gold-bright); margin-bottom:5px; }
+  .gt-line{ font-size:11.5px; font-family:'JetBrains Mono',monospace; padding:1.5px 0; }
+  .char-slot:hover{ border-color:var(--gold-bright); background:rgba(212,175,55,.08); }
+  .char-slot .slot-label{ font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim); margin-bottom:3px; }
+  .char-slot .slot-item{ font-size:12px; font-weight:600; color:var(--text); }
+  .char-slot.equipped .slot-item{ color:var(--gold-bright); }
+  .char-fig{
+    display:flex; align-items:center; justify-content:center; position:relative;
+    border:1px solid var(--panel-border-dim);
+    background:radial-gradient(circle at 50% 42%, rgba(90,110,160,.10), transparent 65%);
+    perspective:700px; overflow:hidden;
+  }
+  .rig{
+    position:relative; width:140px; height:150px;
+    transform-style:preserve-3d;
+    animation: rigSpin 12s linear infinite;
+  }
+  @keyframes rigSpin{
+    from{ transform:rotateX(-8deg) rotateY(0deg); }
+    to{ transform:rotateX(-8deg) rotateY(360deg); }
+  }
+  .cube{ position:absolute; transform-style:preserve-3d; }
+  .cube i{
+    position:absolute; left:0; top:0; display:block;
+    background:rgba(84,104,146,.22);
+    border:1px solid rgba(150,170,210,.30);
+    backface-visibility:hidden;
+  }
+  .cube .f{ width:var(--w); height:var(--h); transform:translate(-50%,-50%) translateZ(calc(var(--d)/2)); }
+  .cube .b{ width:var(--w); height:var(--h); transform:translate(-50%,-50%) rotateY(180deg) translateZ(calc(var(--d)/2)); }
+  .cube .l{ width:var(--d); height:var(--h); transform:translate(-50%,-50%) rotateY(-90deg) translateZ(calc(var(--w)/2)); }
+  .cube .r{ width:var(--d); height:var(--h); transform:translate(-50%,-50%) rotateY(90deg) translateZ(calc(var(--w)/2)); }
+  .cube .t{ width:var(--w); height:var(--d); transform:translate(-50%,-50%) rotateX(90deg) translateZ(calc(var(--h)/2)); }
+  .cube.head{ left:70px; top:16px; }
+  .cube.torso{ left:70px; top:55px; }
+  .cube.armL{ left:31px; top:55px; }
+  .cube.armR{ left:109px; top:55px; }
+  .cube.legL{ left:57px; top:107px; }
+  .cube.legR{ left:83px; top:107px; }
+  .fig-shadow{
+    position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
+    width:92px; height:14px; border-radius:50%;
+    background:radial-gradient(ellipse, rgba(0,0,0,.55), transparent 70%);
+  }
+  .char-stats .char-race{ font-family:'Cinzel',serif; font-size:14px; font-weight:700; letter-spacing:.04em; margin-bottom:12px; }
+  .clan-label{ font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px; }
+  .clan-select{
+    width:100%; margin-bottom:14px; padding:7px 8px;
+    background:#12101f; border:1px solid var(--panel-border); color:var(--gold-bright);
+    font-family:'Cinzel',serif; font-size:11px; letter-spacing:.05em; outline:none; cursor:pointer;
+  }
+  .clan-select:hover{ border-color:var(--gold); }
+  .clan-select option{ background:#12101f; color:var(--text); }
+  .char-stats-title{ font-family:'Cinzel',serif; font-size:16px; font-weight:900; color:#fff; margin-bottom:10px; }
+  .char-stat-row{ display:flex; justify-content:space-between; font-size:12.5px; padding:4px 0; letter-spacing:.04em; }
+  .char-stat-row .sname{ color:var(--text); text-transform:uppercase; font-size:11px; letter-spacing:.12em; }
+  .char-stat-row .sval{ font-family:'JetBrains Mono',monospace; font-weight:600; }
+  .char-hint{ text-align:center; font-size:10.5px; color:var(--text-dim); font-style:italic; margin-top:14px; }
+
+  /* ---- first-load selection menu ---- */
+  .select-menu{
+    position:fixed; inset:0; z-index:15; overflow:auto;
+    background: radial-gradient(ellipse at 50% 45%, rgba(16,13,30,.96) 0%, rgba(5,5,12,.99) 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px;
+  }
+  .select-menu.hidden{ display:none; }
+  .select-cards{ display:flex; gap:28px; flex-wrap:wrap; justify-content:center; }
+  .select-menu .race-load{ margin-top:6px; }
+  .select-title{
+    position:absolute; top:10%; left:0; right:0; text-align:center;
+    font-family:'Cinzel',serif; font-weight:700; font-size:26px; letter-spacing:.35em; text-indent:.35em;
+    color:var(--gold-bright); text-shadow:0 0 22px rgba(212,175,55,.55);
+  }
+  .select-card{
+    width:200px; height:285px; cursor:pointer; position:relative;
+    background: linear-gradient(180deg, rgba(32,28,52,.55), rgba(12,10,24,.9));
+    border:1px solid var(--panel-border);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.5), 0 6px 30px rgba(0,0,0,.55);
+    display:flex; flex-direction:column;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .select-card:hover{ transform: translateY(-10px); border-color: var(--gold-bright); box-shadow: 0 12px 44px rgba(212,175,55,.28); }
+  .select-card .card-icon{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    font-family:'Noto Serif JP',serif; font-size:66px;
+  }
+  .select-card .card-name{
+    font-family:'Cinzel',serif; font-size:15px; letter-spacing:.05em; text-align:center;
+    padding:13px 0 6px; color:var(--text);
+    border-top:1px solid var(--panel-border-dim); margin:0 14px;
+  }
+  .select-card .card-tag{
+    text-align:center; font-size:9.5px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--text-dim); padding:4px 0 14px;
+  }
+
+  /* ---- opening title: click to open the portal ---- */
+  .intro{
+    position:fixed; inset:0; z-index:20; pointer-events:auto; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    overflow:hidden;
+    background: radial-gradient(ellipse at 50% 45%, #13101f 0%, #0a0913 55%, #050409 100%);
+  }
+  .intro::before{
+    content:''; position:absolute; left:50%; top:50%; width:580px; height:580px;
+    transform:translate(-50%,-50%); border-radius:50%; pointer-events:none;
+    background: radial-gradient(circle, rgba(212,175,55,.17), transparent 64%);
+    animation: introBreath 4.6s ease-in-out infinite;
+  }
+  @keyframes introBreath{
+    0%,100%{ opacity:.55; transform:translate(-50%,-50%) scale(1); }
+    50%{ opacity:1; transform:translate(-50%,-50%) scale(1.14); }
+  }
+  .intro-ring{ position:absolute; left:50%; top:50%; border-radius:50%; pointer-events:none; }
+  .intro-ring.r1{
+    width:440px; height:440px; margin:-220px 0 0 -220px;
+    border:1px dashed rgba(212,175,55,.22);
+    animation: introSpin 70s linear infinite;
+  }
+  .intro-ring.r2{
+    width:640px; height:640px; margin:-320px 0 0 -320px;
+    border:1px solid rgba(212,175,55,.10);
+    box-shadow: 0 0 60px rgba(212,175,55,.06) inset;
+    animation: introSpin 110s linear infinite reverse;
+  }
+  @keyframes introSpin{ to{ transform:rotate(360deg); } }
+  .intro-mote{
+    position:absolute; bottom:-12px; border-radius:50%; pointer-events:none;
+    background: var(--gold-bright);
+    animation: moteRise linear infinite;
+  }
+  @keyframes moteRise{
+    0%{ transform:translateY(0); opacity:0; }
+    12%{ opacity:var(--mo, .6); }
+    82%{ opacity:var(--mo, .6); }
+    100%{ transform:translateY(-108vh); opacity:0; }
+  }
+  .intro-click{
+    font-family:'Cinzel', serif; font-size:12px; letter-spacing:.5em; text-indent:.5em;
+    color:var(--gold); margin-top:36px;
+    animation: clickPulse 1.9s ease-in-out infinite, introRise 1.6s .8s ease both;
+  }
+  @keyframes clickPulse{ 0%,100%{ opacity:.3; } 50%{ opacity:1; } }
+  @property --portal-r{ syntax:'<percentage>'; initial-value:0%; inherits:false; }
+  .intro.opening{
+    animation: portalOpen 1.15s ease-in forwards;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent calc(var(--portal-r) - 2%), #000 var(--portal-r));
+    mask-image: radial-gradient(circle at 50% 50%, transparent calc(var(--portal-r) - 2%), #000 var(--portal-r));
+  }
+  @keyframes portalOpen{ from{ --portal-r:0%; } to{ --portal-r:165%; } }
+  .portal-ring{
+    position:absolute; left:50%; top:50%; width:0; height:0; border-radius:50%;
+    transform:translate(-50%,-50%); pointer-events:none; opacity:0;
+  }
+  .intro.opening .portal-ring{
+    border:3px solid var(--gold-bright);
+    box-shadow: 0 0 46px rgba(242,209,107,.95), inset 0 0 34px rgba(242,209,107,.5);
+    animation: ringGrow 1.15s ease-in forwards;
+  }
+  @keyframes ringGrow{ from{ width:0; height:0; opacity:1; } to{ width:330vmax; height:330vmax; opacity:0; } }
+  .intro-kanji{
+    font-family:'Noto Serif JP', serif; font-size:120px; line-height:1; color:var(--gold-bright);
+    text-shadow: 0 0 40px rgba(212,175,55,.8), 0 0 90px rgba(212,175,55,.4);
+    animation: introRise 1.6s ease both;
+  }
+  .intro-title{
+    font-family:'Cinzel', serif; font-weight:900; font-size:44px; letter-spacing:.4em; text-indent:.4em;
+    color:var(--gold-bright); margin-top:18px;
+    text-shadow: 0 0 30px rgba(212,175,55,.7);
+    animation: introRise 1.6s .25s ease both;
+  }
+  .intro-sub{
+    font-family:'Cinzel', serif; font-size:14px; letter-spacing:.6em; text-indent:.6em;
+    color:var(--text-dim); margin-top:14px;
+    animation: introRise 1.6s .5s ease both;
+  }
+  @keyframes introRise{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+  @keyframes introFade{ 0%,62%{ opacity:1; } 100%{ opacity:0; visibility:hidden; } }
+
+  .mobile-note{ display:none; }
+  @media (max-width: 980px){
+    .hud-left-top, .hud-left-bottom, .char-open{ display:none; }
+    .hud-top-center{ top:12px; }
+    .search-box{ width:220px; }
+    .mobile-note{
+      display:block; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      z-index:9; text-align:center; color:var(--text-dim); font-size:12px; padding:14px 20px;
+      background:var(--panel-bg); border:1px solid var(--panel-border); border-radius:4px; max-width:240px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="watermark">
+  <div class="wm-ring"></div>
+  <div class="wm-kanji">念</div>
+  <div class="wm-text">BEYOND NEN</div>
+</div>
+<svg id="treeSvg"></svg>
+
+<!-- race selection screen (opened via 念 hub → Change Race) -->
+<div class="race-menu hidden" id="raceMenu">
+  <div class="race-title">CHOOSE YOUR RACE</div>
+  <div class="race-sub">YOUR RACE SHAPES YOUR FUTURE</div>
+  <div class="race-cards" id="raceCards"></div>
+</div>
+
+<!-- character menu -->
+<div class="char-modal hidden" id="charModal">
+  <div class="char-panel">
+    <div class="char-title"><span>Character Details</span><button class="char-close" id="charClose">✕</button></div>
+    <div class="char-grid">
+      <div class="char-slots" id="charSlots"></div>
+      <div class="char-fig">
+        <div class="rig">
+          <div class="cube head" style="--w:26px;--h:26px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
+          <div class="cube torso" style="--w:52px;--h:52px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
+          <div class="cube armL" style="--w:26px;--h:52px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
+          <div class="cube armR" style="--w:26px;--h:52px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
+          <div class="cube legL" style="--w:26px;--h:52px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
+          <div class="cube legR" style="--w:26px;--h:52px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
+        </div>
+        <div class="fig-shadow"></div>
+      </div>
+      <div class="char-stats">
+        <div class="char-race" id="charRace"></div>
+        <div class="clan-label">◇ Select Clan</div>
+        <select class="clan-select" id="clanSelect"></select>
+        <div class="char-stats-title">Build Stats</div>
+        <div id="charStatRows"></div>
+      </div>
+    </div>
+    <div class="char-hint">Click a slot to browse gear — hover an item to see its bonuses</div>
+  </div>
+</div>
+<div class="gear-tip" id="gearTip"></div>
+
+<!-- first-load selection menu -->
+<div class="select-menu" id="selectMenu">
+  <div class="select-title">CHOOSE YOUR PATH</div>
+  <a class="btn-discord" href="https://discord.gg/A7JzPRcjjK" target="_blank" rel="noopener">✦ Join Our Discord</a>
+  <div class="select-cards">
+  <div class="select-card" data-choice="combat">
+    <div class="card-icon" style="color:#ff5fa8; text-shadow:0 0 26px #ff5fa8">闘</div>
+    <div class="card-name">Combat Style</div>
+    <div class="card-tag">Coming Soon</div>
+  </div>
+  <div class="select-card" data-choice="ability">
+    <div class="card-icon" style="color:#ff6b4a; text-shadow:0 0 26px #ff6b4a">能</div>
+    <div class="card-name">Nen Ability</div>
+    <div class="card-tag">Coming Soon</div>
+  </div>
+  <div class="select-card" data-choice="skills">
+    <div class="card-icon" style="color:#5ab0ff; text-shadow:0 0 26px #5ab0ff">念</div>
+    <div class="card-name">Nen Skills</div>
+    <div class="card-tag">Skill Tree</div>
+  </div>
+  <div class="select-card" data-choice="technique">
+    <div class="card-icon" style="color:#b06bff; text-shadow:0 0 26px #b06bff">技</div>
+    <div class="card-name">Nen Technique</div>
+    <div class="card-tag">Coming Soon</div>
+  </div>
+  </div>
+  <div class="race-load">
+    <div class="race-load-label">Load Existing Build</div>
+    <div class="race-load-row">
+      <input id="loadInput" type="text" placeholder="Paste build link or code...">
+      <button id="loadBtn">Load</button>
+    </div>
+    <button class="race-resume hidden" id="resumeBtn">↻ Resume last saved build</button>
+  </div>
+</div>
+
+<!-- opening title -->
+<div class="intro" id="intro">
+  <div class="intro-ring r1"></div>
+  <div class="intro-ring r2"></div>
+  <div class="intro-kanji">念</div>
+  <div class="intro-title">BEYOND NEN</div>
+  <div class="intro-sub">BUILDER</div>
+  <div class="intro-click">CLICK TO ENTER</div>
+  <div class="portal-ring"></div>
+</div>
+
+<div class="mobile-note">Beyond Nen's skill tree is built for a wider screen — rotate or open on desktop for the full constellation view.</div>
+
+<!-- top-left -->
+<div class="panel hud-left-top">
+  <div class="eyebrow">Character</div>
+  <div class="char-lvl">LVL 0</div>
+  <div class="bp-head"><span>Build Points</span><span class="val"><span id="bpRemaining">400</span>/400</span></div>
+  <div class="bp-track"><div class="bp-track-fill" id="bpTrackFill" style="width:0%"></div></div>
+  <div id="bpRows"></div>
+</div>
+
+<!-- bottom-left -->
+<div class="panel hud-left-bottom">
+  <div class="bp-head"><span>Attributes</span><span class="val"><span id="attrRemaining">400</span>/400</span></div>
+  <div class="diamond-wrap">
+    <svg id="attrRadar" viewBox="-75 -75 150 150" width="150" height="150"></svg>
+    <div id="attrNodes"></div>
+  </div>
+</div>
+
+<!-- top center -->
+<div class="hud-top-center">
+  <div class="divider-title"><div class="line"></div><h1>Nen Tree</h1><div class="line right"></div></div>
+  <div class="pill-row">
+    <div class="pill" id="skillPointsPill" title="Double-click to set a value">Skill Points <span class="val" id="skillPointsVal">200</span></div>
+  </div>
+  <div class="search-box"><span class="search-icon">⚲</span><input id="searchInput" type="text" placeholder="Search skills & passives..."></div>
+</div>
+
+<!-- top-right -->
+<button class="char-open" id="charBtn">◈ Character</button>
+
+<!-- bottom-right -->
+<div class="panel hud-right-bottom" id="skillInfoPanel">
+  <div class="skill-empty"><span class="big">No skill selected</span>Click a node in the skill tree</div>
+</div>
+
+<!-- bottom center -->
+<div class="hud-bottom-center">
+  <button class="btn-reset" id="resetBtn">Reset Build</button>
+  <button class="monogram" id="nenMenuBtn" title="Nen Menu">念</button>
+  <button class="btn-save" id="saveBtn">Save Build</button>
+</div>
+
+<!-- hub menu (念 button) -->
+<div class="hub-modal hidden" id="hubModal">
+  <div class="hub-panel">
+    <div class="hub-head">
+      <div><h2>BEYOND NEN</h2><span>Select a section</span></div>
+      <button class="char-close" id="hubClose">✕</button>
+    </div>
+    <div class="hub-cards">
+      <button class="hub-card" data-hub="race"><div class="hub-icon">狩</div>Change Race</button>
+      <button class="hub-card" data-hub="char"><div class="hub-icon">◈</div>Character</button>
+      <button class="hub-card" data-hub="menu"><div class="hub-icon">☰</div>Main Menu</button>
+      <button class="hub-card" data-hub="builds"><div class="hub-icon">♛</div>Popular Builds</button>
+      <button class="hub-card locked" data-hub="soon"><div class="hub-icon">🔒</div>Coming Soon</button>
+    </div>
+  </div>
+</div>
+
+<!-- popular builds leaderboard -->
+<div class="pb-modal hidden" id="pbModal">
+  <div class="pb-panel">
+    <div class="hub-head">
+      <div><h2>POPULAR BUILDS</h2><span id="pbSub">Most liked builds</span></div>
+      <button class="char-close" id="pbClose">✕</button>
+    </div>
+    <div class="pb-tabs">
+      <button class="pb-tab active" data-sort="likes">Most Liked</button>
+      <button class="pb-tab" data-sort="views">Top Viewed</button>
+      <button class="pb-publish" id="pbPublish">＋ Publish My Build</button>
+    </div>
+    <div class="pb-grid" id="pbGrid"></div>
+    <div class="pb-note">Click a build to load it — likes &amp; views are stored in your browser for now; a server can make the leaderboard global later.</div>
+  </div>
+</div>
+
+<!-- hover skill card -->
+<div class="skill-tooltip" id="skillTooltip">
+  <div class="tt-left">
+    <div class="tt-name" id="ttName"></div>
+    <div class="tt-status" id="ttStatus"></div>
+    <div class="tt-desc" id="ttDesc"></div>
+    <div class="tt-label" id="ttCostLabel">Cost</div>
+    <div class="tt-chip" id="ttCost"></div>
+    <div class="tt-label" id="ttReqLabel">Requires</div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap">
+      <div class="tt-chip" id="ttReq"></div>
+      <div class="tt-chip" id="ttStatReq"></div>
+    </div>
+    <div class="tt-note" id="ttNote"></div>
+    <div class="tt-lock" id="ttLock"></div>
+  </div>
+  <div class="tt-preview">
+    <div class="tt-preview-head" id="ttPreviewHead">Preview</div>
+    <div class="tt-preview-orb" id="ttOrb"><span class="tt-kanji" id="ttKanji"></span></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+
+  const GOLD = '#d4af37';
+  const GOLD_BRIGHT = '#f2d16b';
+
+  /* ---------- starfield (bright galaxy dust) ---------- */
+  const starsWrap = document.getElementById('stars');
+  const STAR_COLORS = ['#ffffff','#ffffff','#ffe9b0','#bcd6ff','#ffc7e0','#c8ffe9'];
+  for(let i=0;i<240;i++){
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() < 0.78 ? 1 : (Math.random() < 0.85 ? 2 : 3);
+    s.style.width = size+'px';
+    s.style.height = size+'px';
+    s.style.left = (Math.random()*100)+'%';
+    s.style.top = (Math.random()*100)+'%';
+    const col = STAR_COLORS[Math.floor(Math.random()*STAR_COLORS.length)];
+    s.style.background = col;
+    if(size > 1) s.style.boxShadow = '0 0 '+(size*2)+'px '+col;
+    s.style.setProperty('--d', (2.5 + Math.random()*5).toFixed(1)+'s');
+    s.style.animationDelay = (Math.random()*5).toFixed(1)+'s';
+    starsWrap.appendChild(s);
+  }
+
+  /* ---------- structured skill tree ----------
+     Six sectors (one per nen type). Each sector: a 5-node spine going
+     straight out from the center, plus two 3-node side branches.
+     Every node requires its parent before it can be allocated. */
+  const VB_W = 2000, VB_H = 1300;
+  const CENTER = { x: VB_W/2, y: VB_H/2 + 20 };
+
+  // each path draws on one attribute from the diamond; skills deeper in
+  // a path demand more of it before they can be learned
+  const SECTORS = [
+    { angle: 90, name:'Specialization', color:'#ffd166', stat:'total',
+      spine:['Aura Sense','Gyo','In','En','Hatsu Awakening'],
+      branchA:['Vow','Limitation','Contract Seal'],
+      branchB:['Aura Sync','Overload','Beyond State'] },
+    { angle:-90, name:'Enhancement', color:'#ff6b4a', stat:'ren',
+      spine:['Ten Discipline','Ren Surge','Shu','Ko Strike','Ryu Mastery'],
+      branchA:['Iron Skin','Titan Grip','Unbreakable'],
+      branchB:['Berserk Pulse','Second Wind','Colossus'] },
+    { angle:210, name:'Emission', color:'#5ab0ff', stat:'ko',
+      spine:['Aura Shot','Remote Ren','Emitted Orb','Warp Step','Aura Cannon'],
+      branchA:['Tracer Round','Homing Aura','Barrage'],
+      branchB:['Blink','Beacon','Gate'] },
+    { angle:150, name:'Manipulation', color:'#ff5fa8', stat:'zetsu',
+      spine:['Attach Aura','Puppet Thread','Command Word','Domination','Absolute Order'],
+      branchA:['Beast Tamer','Swarm Control','Legion'],
+      branchB:['Body Hijack','Memory Thread','Marionette'] },
+    { angle: 30, name:'Conjuration', color:'#3ee0b0', stat:'ten',
+      spine:['Materialize','Bound Object','Armory','Living Construct','Perfect Replica'],
+      branchA:['Chain Craft','Cage','Prison Realm'],
+      branchB:['Blade Craft','Shield Wall','Fortress'] },
+    { angle:-30, name:'Transmutation', color:'#b06bff', stat:'ren',
+      spine:['Aura Shape','Elastic Aura','Lightning Charge','Razor Aura','Godspeed Flow'],
+      branchA:['Sticky Aura','Tar Field','Quicksand'],
+      branchB:['Electric Palm','Thunderbolt','Storm Cloak'] },
+  ];
+
+  const nodes = [];
+  const edges = [];
+  let nodeIdCounter = 0;
+
+  const MAX_LEVEL = 6;
+
+  function addNode(x,y,parentId,label,type,tier,color,kind){
+    const id = nodeIdCounter++;
+    nodes.push({ id, x, y, parentId, allocated:false, level:0, label, type, tier, color, kind: kind || 'skill' });
+    if(parentId !== null) edges.push({ a: parentId, b: id, color });
+    return id;
+  }
+
+  function polar(cx, cy, angleDeg, dist){
+    const rad = angleDeg * Math.PI/180;
+    return { x: cx + Math.cos(rad)*dist, y: cy + Math.sin(rad)*dist };
+  }
+
+  // mix a hex colour toward white (f = 0..1)
+  function tint(hex, f){
+    const n = parseInt(hex.slice(1), 16);
+    const m = c => Math.round(c + (255 - c) * f);
+    return `rgb(${m(n>>16&255)},${m(n>>8&255)},${m(n&255)})`;
+  }
+
+  // hexagon outline — pointy-top for skills, flat-top for passives
+  function hexPoints(cx, cy, r, flat){
+    const pts = [];
+    const start = flat ? -60 : -90;
+    for(let i=0;i<6;i++){
+      const a = (60*i + start) * Math.PI/180;
+      pts.push((cx + r*Math.cos(a)).toFixed(2) + ',' + (cy + r*Math.sin(a)).toFixed(2));
+    }
+    return pts.join(' ');
+  }
+
+  /* Every path gets its own constellation shape, like the game: a bush,
+     a zigzag bolt, an umbrella canopy, a trident fan, a ring and a vine.
+     Entries are [angleOffset°, radius, parentIndex]; parent -1 = hangs
+     off the core. Names map in order: spine[0-4], branchA[0-2], branchB[0-2]. */
+  const R_ROOT = 140, R_HEART = 350, R_CROWN = 442;   // guide-ring radii
+  const TREE_EDGE = 486;                              // outermost reach, for titles
+
+  const SHAPES = {
+    // symmetric bush — root forks twice into a wide crown
+    Enhancement: [
+      [0,155,-1],[-15,245,0],[15,245,0],[-24,330,1],[-8,335,1],[8,335,2],[24,330,2],
+      [-28,425,3],[-10,430,4],[10,430,5],[28,425,6]
+    ],
+    // lightning zigzag with two offshoot chains
+    Transmutation: [
+      [0,150,-1],[12,225,0],[-10,300,1],[14,370,2],[-6,445,3],
+      [-22,240,0],[-28,330,5],[-16,415,6],[26,300,1],[24,390,8],[18,460,9]
+    ],
+    // tight cluster opening into an umbrella canopy
+    Conjuration: [
+      [0,150,-1],[0,235,0],[-18,300,1],[0,315,1],[18,300,1],
+      [-24,385,2],[-9,400,3],[9,400,3],[24,385,4],[-17,465,6],[17,465,7]
+    ],
+    // trident fan — centre line flanked by curved prongs
+    Specialization: [
+      [0,150,-1],[0,250,0],[0,350,1],[-9,445,2],[9,445,2],
+      [-20,245,0],[-27,340,5],[-16,420,6],[20,245,0],[27,340,8],[16,420,9]
+    ],
+    // halo ring around an inner column
+    Manipulation: [
+      [0,150,-1],[-22,235,0],[22,235,0],[-25,320,1],[25,320,2],
+      [-18,405,3],[18,405,4],[0,455,5],[0,265,0],[0,350,8],[24,448,6]
+    ],
+    // winding vine curling back with leaf offshoots
+    Emission: [
+      [0,150,-1],[-15,220,0],[-24,300,1],[-18,380,2],[-2,445,3],
+      [14,235,0],[7,315,5],[19,395,6],[-28,345,2],[-26,440,3],[9,470,7]
+    ],
+  };
+
+  SECTORS.forEach(sector => {
+    const tpl = SHAPES[sector.name];
+    const names = [...sector.spine, ...sector.branchA, ...sector.branchB];
+    const ids = [], tiers = [];
+    tpl.forEach(([off, dist, p], i) => {
+      const pos = polar(CENTER.x, CENTER.y, sector.angle + off, dist);
+      const parentId = p === -1 ? null : ids[p];
+      const tier = p === -1 ? 1 : tiers[p] + 1;
+      // main-line names (spine) are active skills; branch names are passives
+      const kind = i < 5 ? 'skill' : 'passive';
+      const id = addNode(pos.x, pos.y, parentId, names[i], sector.name, tier, sector.color, kind);
+      ids.push(id);
+      tiers.push(tier);
+      if(p === -1) edges.push({ a:'center', b: id });
+    });
+  });
+
+  /* ---------- lock / prerequisite helpers ---------- */
+  function parentOf(n){ return n.parentId === null ? null : nodes.find(p => p.id === n.parentId); }
+  function isUnlocked(n){
+    const p = parentOf(n);
+    return p === null || p.allocated;   // roots connect to the core, always open
+  }
+  function hasAllocatedChild(n){
+    return nodes.some(c => c.parentId === n.id && c.allocated);
+  }
+  // every unallocated skill on the way to this one, root-first (includes the node itself)
+  function chainTo(n){
+    const chain = [];
+    let cur = n;
+    while(cur && !cur.allocated){
+      chain.unshift(cur);
+      cur = parentOf(cur);
+    }
+    return chain;
+  }
+
+  /* ---------- attribute requirements ----------
+     Every skill demands attribute points before it can be learned:
+     deeper skills need more of the path's governing stat. */
+  const STAT_NAMES = { ren:'Ren', ko:'Ko', ten:'Ten', zetsu:'Zetsu', total:'Total Attr' };
+  function sectorOf(n){ return SECTORS.find(s => s.name === n.type); }
+  function statReq(n){ return n.tier * (sectorOf(n).stat === 'total' ? 15 : 10); }
+  function statHave(n){
+    const s = sectorOf(n).stat;
+    return s === 'total' ? attrSpent() : attrValues[s];
+  }
+  function statMet(n){ return statHave(n) >= statReq(n); }
+  function statName(n){ return STAT_NAMES[sectorOf(n).stat]; }
+
+  /* ---------- svg render ---------- */
+  const svg = document.getElementById('treeSvg');
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  /* ---------- camera: starts zoomed in, wheel zooms, drag pans ---------- */
+  const CAM_ASPECT = VB_H / VB_W;
+  const CAM_MIN_W = 380, CAM_MAX_W = 2100;
+  const cam = { w: 1150, h: 1150 * CAM_ASPECT, x: 0, y: 0 };
+  cam.x = CENTER.x - cam.w / 2;
+  cam.y = CENTER.y - cam.h / 2;
+
+  function applyCam(){
+    cam.x = Math.min(Math.max(cam.x, -cam.w / 2), VB_W - cam.w / 2);
+    cam.y = Math.min(Math.max(cam.y, -cam.h / 2), VB_H - cam.h / 2);
+    svg.setAttribute('viewBox', `${cam.x} ${cam.y} ${cam.w} ${cam.h}`);
+  }
+  function fitViewBox(){
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    applyCam();
+  }
+  function clientToSvg(cx, cy){
+    const pt = svg.createSVGPoint();
+    pt.x = cx; pt.y = cy;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  }
+
+  svg.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY > 0 ? 1.15 : 1 / 1.15;
+    const newW = Math.min(Math.max(cam.w * factor, CAM_MIN_W), CAM_MAX_W);
+    if(newW === cam.w) return;
+    const p = clientToSvg(e.clientX, e.clientY);   // zoom toward the cursor
+    const k = newW / cam.w;
+    cam.x = p.x - (p.x - cam.x) * k;
+    cam.y = p.y - (p.y - cam.y) * k;
+    cam.w = newW; cam.h = newW * CAM_ASPECT;
+    applyCam();
+  }, { passive:false });
+
+  let dragging = false, dragMoved = false, dragStart = null, camStart = null;
+  svg.addEventListener('pointerdown', e => {
+    dragging = true; dragMoved = false;
+    dragStart = { x: e.clientX, y: e.clientY };
+    camStart = { x: cam.x, y: cam.y };
+  });
+  svg.addEventListener('pointermove', e => {
+    if(!dragging) return;
+    const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
+    if(!dragMoved && Math.abs(dx) + Math.abs(dy) > 5){
+      dragMoved = true;
+      // capture only once a real drag starts — capturing on pointerdown
+      // retargets the click event away from the node, killing node picks
+      svg.setPointerCapture(e.pointerId);
+      svg.classList.add('dragging');
+      tooltip.classList.remove('show');
+      hoveredNodeId = null;
+    }
+    if(!dragMoved) return;
+    // slice fills the viewport with the larger scale axis
+    const s = Math.max(svg.clientWidth / cam.w, svg.clientHeight / cam.h);
+    cam.x = camStart.x - dx / s;
+    cam.y = camStart.y - dy / s;
+    applyCam();
+  });
+  ['pointerup','pointercancel'].forEach(ev => svg.addEventListener(ev, () => {
+    dragging = false;
+    svg.classList.remove('dragging');
+  }));
+
+  let selectedNodeId = null;
+  const justUnlocked = new Set();   // nodes to pop-animate on the next render
+
+  function renderTree(searchTerm){
+    svg.innerHTML = '';
+    const defs = document.createElementNS(SVG_NS, 'defs');
+    defs.innerHTML = `
+      <filter id="glow" x="-150%" y="-150%" width="400%" height="400%">
+        <feGaussianBlur stdDeviation="1.8" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="bigglow" x="-250%" y="-250%" width="600%" height="600%">
+        <feGaussianBlur stdDeviation="11"/>
+      </filter>`;
+    svg.appendChild(defs);
+
+    const term = (searchTerm||'').trim().toLowerCase();
+
+    // faint concentric guide rings behind the tree
+    [R_ROOT, R_HEART, R_CROWN].forEach(r => {
+      const ring = document.createElementNS(SVG_NS,'circle');
+      ring.setAttribute('cx', CENTER.x); ring.setAttribute('cy', CENTER.y); ring.setAttribute('r', r);
+      ring.setAttribute('fill','none');
+      ring.setAttribute('stroke', GOLD);
+      ring.setAttribute('stroke-opacity','0.09');
+      ring.setAttribute('stroke-dasharray','2 6');
+      svg.appendChild(ring);
+    });
+
+    // sector titles around the tree, tinted per type — held clear of the branch tips
+    SECTORS.forEach(sec => {
+      const p = polar(CENTER.x, CENTER.y, sec.angle, TREE_EDGE + 52);
+      const t = document.createElementNS(SVG_NS,'text');
+      t.setAttribute('x', p.x); t.setAttribute('y', p.y);
+      // grow the text away from the tree so it never backs into its own branch
+      const cos = Math.cos(sec.angle * Math.PI/180);
+      t.setAttribute('text-anchor', cos > 0.3 ? 'start' : (cos < -0.3 ? 'end' : 'middle'));
+      t.setAttribute('fill', sec.color);
+      t.setAttribute('fill-opacity','0.95');
+      t.setAttribute('font-size','15');
+      t.setAttribute('font-family','Cinzel, serif');
+      t.setAttribute('font-weight','700');
+      t.setAttribute('letter-spacing','3.5');
+      t.textContent = sec.name.toUpperCase();
+      svg.appendChild(t);
+    });
+
+    // edges
+    edges.forEach(e => {
+      const a = e.a === 'center' ? CENTER : nodes.find(n => n.id === e.a);
+      const b = nodes.find(n => n.id === e.b);
+      if(!a || !b) return;
+      const aAlloc = e.a === 'center' ? true : nodes.find(n => n.id === e.a).allocated;
+      const lit = aAlloc && b.allocated;
+      const open = aAlloc && !b.allocated;   // path to an unlockable node
+      if(lit){
+        // soft glow underlay, crisp line on top
+        const under = document.createElementNS(SVG_NS,'line');
+        under.setAttribute('x1', a.x); under.setAttribute('y1', a.y);
+        under.setAttribute('x2', b.x); under.setAttribute('y2', b.y);
+        under.setAttribute('stroke', b.color);
+        under.setAttribute('stroke-opacity', 0.55);
+        under.setAttribute('stroke-width', 5);
+        under.setAttribute('filter','url(#bigglow)');
+        svg.appendChild(under);
+      }
+      const line = document.createElementNS(SVG_NS,'line');
+      line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+      line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+      line.setAttribute('stroke', (lit || open) ? b.color : '#6a6875');
+      line.setAttribute('stroke-opacity', lit ? 1 : (open ? 0.45 : 0.3));
+      line.setAttribute('stroke-width', lit ? 2.6 : (open ? 1.6 : 1.4));
+      svg.appendChild(line);
+    });
+
+    // kanji gate hex at the mouth of each path
+    SECTORS.forEach(sec => {
+      const p = polar(CENTER.x, CENTER.y, sec.angle, 76);
+      const anyLit = nodes.some(n => n.type === sec.name && n.allocated);
+      const hex = document.createElementNS(SVG_NS,'polygon');
+      hex.setAttribute('points', hexPoints(p.x, p.y, 22));
+      hex.setAttribute('fill', '#0b0a14');
+      hex.setAttribute('stroke', sec.color);
+      hex.setAttribute('stroke-width', 2.2);
+      hex.setAttribute('stroke-opacity', anyLit ? 1 : 0.7);
+      hex.setAttribute('filter','url(#glow)');
+      svg.appendChild(hex);
+      const kt = document.createElementNS(SVG_NS,'text');
+      kt.setAttribute('x', p.x); kt.setAttribute('y', p.y + 7);
+      kt.setAttribute('text-anchor','middle');
+      kt.setAttribute('fill', sec.color);
+      kt.setAttribute('fill-opacity', anyLit ? 1 : 0.85);
+      kt.setAttribute('font-size','20');
+      kt.setAttribute('font-family','Noto Serif JP, serif');
+      kt.setAttribute('font-weight','700');
+      kt.setAttribute('filter','url(#glow)');
+      kt.textContent = KANJI[sec.name];
+      svg.appendChild(kt);
+    });
+
+    // nodes
+    nodes.forEach(n => {
+      const match = term && n.label.toLowerCase().includes(term);
+      const dimmed = term && !match;
+      const unlocked = isUnlocked(n);
+
+      const g = document.createElementNS(SVG_NS,'g');
+      g.setAttribute('data-node-id', n.id);
+      g.style.cursor = 'pointer';
+      g.style.opacity = dimmed ? 0.18 : 1;
+
+      // every reachable point carries its own glow; allocated ones burn brighter with level
+      if(n.allocated){
+        const halo = document.createElementNS(SVG_NS,'circle');
+        halo.setAttribute('cx', n.x); halo.setAttribute('cy', n.y);
+        halo.setAttribute('r', 16 + n.level * 3);
+        halo.setAttribute('fill', n.color);
+        halo.setAttribute('opacity', 0.22 + n.level * 0.04);
+        halo.setAttribute('filter','url(#bigglow)');
+        g.appendChild(halo);
+      }
+
+      // passives read slightly smaller and flat-topped; skills stay pointy-top
+      const isPassive = n.kind === 'passive';
+      const base = isPassive ? 13 : 15;
+      const r = n.allocated ? base + n.level * 0.5 : base;
+
+      // chunky hexagon node — bright pale core when learned, gray + padlock when sealed
+      const hex = document.createElementNS(SVG_NS,'polygon');
+      hex.setAttribute('points', hexPoints(n.x, n.y, r, isPassive));
+      if(n.allocated){
+        hex.setAttribute('fill', tint(n.color, 0.55));
+        hex.setAttribute('stroke', n.color);
+        hex.setAttribute('stroke-width', 3);
+        hex.setAttribute('stroke-opacity', 1);
+        hex.setAttribute('filter','url(#glow)');
+      } else if(unlocked){
+        hex.setAttribute('fill', '#0e0c1a');
+        hex.setAttribute('stroke', n.color);
+        hex.setAttribute('stroke-width', 2);
+        hex.setAttribute('stroke-opacity', 0.8);
+        if(match) hex.setAttribute('filter','url(#glow)');
+      } else {
+        hex.setAttribute('fill', '#0e0c1a');
+        hex.setAttribute('stroke', n.color);
+        hex.setAttribute('stroke-width', 1.6);
+        hex.setAttribute('stroke-opacity', 0.45);
+      }
+      if(n.id === selectedNodeId){
+        hex.setAttribute('stroke', '#ffffff');
+        hex.setAttribute('stroke-width', 2.6);
+        hex.setAttribute('stroke-opacity', 1);
+      }
+      if(justUnlocked.has(n.id)) hex.classList.add('pop');
+      g.appendChild(hex);
+
+      // small padlock riding the bottom edge of locked nodes
+      if(!unlocked && !n.allocated){
+        const ly = n.y + r - 3;
+        const backing = document.createElementNS(SVG_NS,'circle');
+        backing.setAttribute('cx', n.x); backing.setAttribute('cy', ly); backing.setAttribute('r', 5.2);
+        backing.setAttribute('fill', '#0e0c1a');
+        backing.setAttribute('stroke', n.color);
+        backing.setAttribute('stroke-opacity', 0.45);
+        backing.setAttribute('stroke-width', 0.8);
+        g.appendChild(backing);
+        const shackle = document.createElementNS(SVG_NS,'path');
+        shackle.setAttribute('d', `M ${n.x-1.6} ${ly-0.4} v -1.3 a 1.6 1.6 0 0 1 3.2 0 v 1.3`);
+        shackle.setAttribute('fill','none');
+        shackle.setAttribute('stroke','#c9c6d8');
+        shackle.setAttribute('stroke-width','1');
+        g.appendChild(shackle);
+        const body = document.createElementNS(SVG_NS,'rect');
+        body.setAttribute('x', n.x - 2.4); body.setAttribute('y', ly - 0.4);
+        body.setAttribute('width', 4.8); body.setAttribute('height', 3.6);
+        body.setAttribute('rx', 0.8);
+        body.setAttribute('fill','#c9c6d8');
+        g.appendChild(body);
+      }
+
+      // allocated nodes show their tier numeral inside the circle
+      if(n.allocated){
+        const txt = document.createElementNS(SVG_NS,'text');
+        txt.setAttribute('x', n.x);
+        txt.setAttribute('y', n.y + 4.6);
+        txt.setAttribute('text-anchor','middle');
+        txt.setAttribute('fill', '#0d0b1a');
+        txt.setAttribute('font-size','13');
+        txt.setAttribute('font-family','Rye, serif');
+        txt.textContent = n.level;
+        g.appendChild(txt);
+      }
+
+      svg.appendChild(g);
+    });
+
+    // center core — hatsu hexagon
+    const coreGlow = document.createElementNS(SVG_NS,'circle');
+    coreGlow.setAttribute('cx', CENTER.x); coreGlow.setAttribute('cy', CENTER.y); coreGlow.setAttribute('r', 40);
+    coreGlow.setAttribute('fill', '#ffffff'); coreGlow.setAttribute('opacity', 0.14);
+    coreGlow.setAttribute('filter','url(#bigglow)');
+    svg.appendChild(coreGlow);
+    const coreHexOuter = document.createElementNS(SVG_NS,'polygon');
+    coreHexOuter.setAttribute('points', hexPoints(CENTER.x, CENTER.y, 42));
+    coreHexOuter.setAttribute('fill','none');
+    coreHexOuter.setAttribute('stroke', GOLD);
+    coreHexOuter.setAttribute('stroke-width','0.8');
+    coreHexOuter.setAttribute('stroke-opacity','0.5');
+    svg.appendChild(coreHexOuter);
+    const coreHex = document.createElementNS(SVG_NS,'polygon');
+    coreHex.setAttribute('points', hexPoints(CENTER.x, CENTER.y, 36));
+    coreHex.setAttribute('fill', '#0b0a14');
+    coreHex.setAttribute('stroke', '#ffffff');
+    coreHex.setAttribute('stroke-width', '2.6');
+    coreHex.setAttribute('filter','url(#glow)');
+    svg.appendChild(coreHex);
+    const coreTxt = document.createElementNS(SVG_NS,'text');
+    coreTxt.setAttribute('x', CENTER.x); coreTxt.setAttribute('y', CENTER.y + 12);
+    coreTxt.setAttribute('text-anchor','middle');
+    coreTxt.setAttribute('fill', '#ffffff');
+    coreTxt.setAttribute('font-size','36');
+    coreTxt.setAttribute('font-family','Noto Serif JP, serif');
+    coreTxt.setAttribute('font-weight','700');
+    coreTxt.setAttribute('filter','url(#glow)');
+    coreTxt.textContent = '発';
+    svg.appendChild(coreTxt);
+
+    justUnlocked.clear();   // pop animation plays once per unlock
+  }
+
+  /* ---------- points economy ---------- */
+  const SKILL_POINTS_TOTAL = 200;
+  let skillPoints = SKILL_POINTS_TOTAL;
+
+  // character level grows as you invest skill points: 4 SP = 1 level, cap 100
+  function spentSP(){ return nodes.reduce((s, n) => s + n.level, 0); }
+  function charLevel(){ return Math.min(100, Math.floor(spentSP() / 4)); }
+  function updateLevelHud(){
+    document.querySelector('.char-lvl').textContent = 'LVL ' + charLevel();
+    const raceEl = document.getElementById('charRace');
+    if(raceEl && typeof RACES !== 'undefined'){
+      raceEl.textContent = '◆ Level ' + charLevel() + ' ' + RACES[raceIndex].name;
+    }
+  }
+
+  function refresh(node){
+    document.getElementById('skillPointsVal').textContent = skillPoints;
+    renderTree(document.getElementById('searchInput').value);
+    if(node) updateInfoPanel(node);
+    updateLevelHud();
+    if(hoveredNodeId !== null){
+      const hn = nodes.find(n => n.id === hoveredNodeId);
+      if(hn) fillTooltip(hn);
+    }
+  }
+
+  // click: allocate at tier I, then each click upgrades one tier up to VI
+  function toggleNode(id){
+    const node = nodes.find(n => n.id === id);
+    if(!node) return;
+    selectedNodeId = id;
+    if(!node.allocated){
+      // clicking a deeper skill buys the whole path to it, requirements permitting
+      const chain = chainTo(node);
+      const unmet = chain.filter(c => !statMet(c));
+      if(unmet.length){
+        const worst = unmet[unmet.length - 1];
+        showToast('Requires ' + statReq(worst) + ' ' + statName(worst) + ' (you have ' + statHave(worst) + ')');
+        refresh(node);
+        return;
+      }
+      if(skillPoints < chain.length){
+        showToast(chain.length > 1
+          ? 'Need ' + chain.length + ' skill points to unlock this path (' + skillPoints + ' left)'
+          : 'No skill points remaining');
+        refresh(node);
+        return;
+      }
+      chain.forEach(c => { c.allocated = true; c.level = 1; justUnlocked.add(c.id); });
+      skillPoints -= chain.length;
+      if(chain.length > 1) showToast('Path unlocked — ' + chain.length + ' skills learned');
+    }
+    // clicking an already-learned skill only selects it — upgrades go
+    // through the Upgrade button so stray clicks can't spend points
+    refresh(node);
+  }
+
+  function upgradeNode(id){
+    const node = nodes.find(n => n.id === id);
+    if(!node || !node.allocated) return;
+    selectedNodeId = id;
+    if(node.level >= MAX_LEVEL){
+      showToast(node.label + ' is already at max level ' + MAX_LEVEL);
+    } else if(skillPoints <= 0){
+      showToast('No skill points remaining');
+    } else {
+      node.level++;
+      skillPoints--;
+      showToast(node.label + ' upgraded to Lv ' + node.level);
+    }
+    refresh(node);
+  }
+
+  // panel "Allocate": if the stat requirement isn't met yet, auto-assign the
+  // missing attribute points from the pool, then learn the skill (and any
+  // skills on the way to it — the deepest requirement covers the whole chain)
+  function allocateWithStats(node){
+    if(!node.allocated && !statMet(node)){
+      const need = statReq(node) - statHave(node);
+      const remaining = ATTR_TOTAL - attrSpent();
+      if(remaining < need){
+        showToast('Not enough attribute points — need ' + need + ', only ' + remaining + ' left');
+        refresh(node);
+        return;
+      }
+      const s = sectorOf(node).stat;
+      if(s === 'total'){
+        // spread evenly, always raising the lowest attribute first
+        const keys = ['ren','ko','ten','zetsu'];
+        for(let i=0;i<need;i++){
+          const k = keys.reduce((a,b) => attrValues[a] <= attrValues[b] ? a : b);
+          attrValues[k]++;
+        }
+      } else {
+        attrValues[s] += need;
+      }
+      renderAttrs();
+      showToast('Auto-assigned ' + need + ' ' + statName(node));
+    }
+    toggleNode(node.id);
+  }
+
+  function deallocateNode(id){
+    const node = nodes.find(n => n.id === id);
+    if(!node || !node.allocated) return;
+    if(hasAllocatedChild(node)){
+      showToast('Deallocate the skills after this one first');
+      refresh(node);
+      return;
+    }
+    skillPoints += node.level;
+    node.allocated = false;
+    node.level = 0;
+    refresh(node);
+  }
+
+  // single click selects a node; DOUBLE click learns it — no accidental unlocks
+  svg.addEventListener('click', e => {
+    if(dragMoved){ dragMoved = false; return; }   // was a pan, not a pick
+    const g = e.target.closest('[data-node-id]');
+    if(!g) return;
+    const node = nodes.find(n => n.id === parseInt(g.getAttribute('data-node-id'), 10));
+    if(!node) return;
+    selectedNodeId = node.id;
+    refresh(node);
+  });
+  svg.addEventListener('dblclick', e => {
+    if(dragMoved) return;
+    const g = e.target.closest('[data-node-id]');
+    if(!g) return;
+    toggleNode(parseInt(g.getAttribute('data-node-id'), 10));
+  });
+
+  /* ---------- hover skill card ---------- */
+  const KANJI = {
+    'Specialization':'特', 'Enhancement':'強', 'Emission':'放',
+    'Manipulation':'操', 'Conjuration':'具', 'Transmutation':'変',
+  };
+  const PATH_DESC = {
+    'Specialization':'A rare technique outside the five paths — its nature bends the rules of Nen itself.',
+    'Enhancement':'Channels aura into raw physical power, toughness and recovery.',
+    'Emission':'Detaches aura from the body to strike, travel or mark targets at range.',
+    'Manipulation':'Bends objects, beasts and minds to your will through attached aura.',
+    'Conjuration':'Materializes weapons, tools and constructs out of condensed aura.',
+    'Transmutation':'Alters the very properties of aura — shape, charge, texture and speed.',
+  };
+
+  const tooltip = document.getElementById('skillTooltip');
+  let hoveredNodeId = null;
+
+  function fillTooltip(node){
+    const unlocked = isUnlocked(node);
+    const locked = !unlocked && !node.allocated;
+    const maxed = node.level >= MAX_LEVEL;
+    const parent = parentOf(node);
+    const c = node.color;
+
+    tooltip.style.borderColor = c;
+    tooltip.classList.toggle('no-preview', node.kind === 'passive');   // passives carry no preview
+    document.getElementById('ttName').textContent = node.label + (node.allocated ? ' Lv ' + node.level : '');
+    document.getElementById('ttName').style.color = c;
+    const status = document.getElementById('ttStatus');
+    status.textContent = (node.kind === 'passive' ? 'Passive · ' : 'Skill · ') + (node.allocated ? 'Unlocked' : 'Not Unlocked');
+    status.className = 'tt-status' + (node.allocated ? ' unlocked' : '');
+    document.getElementById('ttDesc').textContent = PATH_DESC[node.type];
+    document.getElementById('ttCostLabel').style.color = c;
+    const chainLen = node.allocated ? 0 : chainTo(node).length;
+    document.getElementById('ttCost').textContent = maxed
+      ? node.level + ' SP invested'
+      : (node.allocated ? '1 SP' : chainLen + ' SP' + (chainLen > 1 ? ' (path)' : ''));
+    document.getElementById('ttCost').style.color = c;
+    const req = document.getElementById('ttReq');
+    if(parent === null){
+      req.textContent = 'Root skill';
+      req.style.color = '#3ee0b0';
+      req.style.borderColor = 'rgba(62,224,176,.4)';
+    } else {
+      req.textContent = parent.label + (parent.allocated ? ' ✓' : '');
+      req.style.color = parent.allocated ? '#3ee0b0' : '#ff5fa8';
+      req.style.borderColor = parent.allocated ? 'rgba(62,224,176,.4)' : 'rgba(255,95,168,.4)';
+    }
+    const statChip = document.getElementById('ttStatReq');
+    const met = statMet(node);
+    statChip.textContent = statName(node).toUpperCase() + ' ' + statReq(node) + (met ? ' ✓' : '');
+    statChip.style.color = met ? '#3ee0b0' : '#ff5fa8';
+    statChip.style.borderColor = met ? 'rgba(62,224,176,.4)' : 'rgba(255,95,168,.4)';
+    document.getElementById('ttReqLabel').style.color = c;
+    const note = document.getElementById('ttNote');
+    note.textContent = maxed
+      ? 'Fully mastered — this technique has reached its limit.'
+      : 'Lvl ' + (node.level + 1) + ': amplifies this technique\'s power and aura efficiency.';
+    document.getElementById('ttLock').textContent = locked ? 'Locked — double-click to unlock the path' : (node.allocated ? 'Level ' + node.level + ' / ' + MAX_LEVEL : 'Available — double-click to learn');
+    document.getElementById('ttPreviewHead').style.color = c;
+    document.getElementById('ttOrb').style.background =
+      `radial-gradient(circle at 50% 55%, ${c} 0%, rgba(13,11,26,0) 68%), radial-gradient(circle at 50% 50%, rgba(255,255,255,.25) 0%, rgba(13,11,26,.1) 30%, #0d0b1a 100%)`;
+    document.getElementById('ttKanji').textContent = KANJI[node.type];
+  }
+
+  function placeTooltip(e){
+    const pad = 18, w = tooltip.offsetWidth, h = tooltip.offsetHeight;
+    let x = e.clientX + pad, y = e.clientY + pad;
+    if(x + w > window.innerWidth - 8)  x = e.clientX - w - pad;
+    if(y + h > window.innerHeight - 8) y = e.clientY - h - pad;
+    tooltip.style.left = Math.max(8, x) + 'px';
+    tooltip.style.top  = Math.max(8, y) + 'px';
+  }
+
+  svg.addEventListener('mousemove', e => {
+    if(dragging && dragMoved) return;   // no hover card while panning
+    const g = e.target.closest('[data-node-id]');
+    if(!g){
+      if(hoveredNodeId !== null){ hoveredNodeId = null; tooltip.classList.remove('show'); }
+      return;
+    }
+    const id = parseInt(g.getAttribute('data-node-id'), 10);
+    if(id !== hoveredNodeId){
+      hoveredNodeId = id;
+      fillTooltip(nodes.find(n => n.id === id));
+      tooltip.classList.add('show');
+    }
+    placeTooltip(e);
+  });
+  svg.addEventListener('mouseleave', () => {
+    hoveredNodeId = null;
+    tooltip.classList.remove('show');
+  });
+
+  function updateInfoPanel(node){
+    const panel = document.getElementById('skillInfoPanel');
+    const unlocked = isUnlocked(node);
+    const locked = !unlocked && !node.allocated;
+    const parent = parentOf(node);
+    const maxed = node.level >= MAX_LEVEL;
+    const chainLen = node.allocated ? 0 : chainTo(node).length;
+    const desc = locked
+      ? 'Sealed behind "' + parent.label + '". Unlock the path to learn all ' + chainLen + ' skills leading here at once.'
+      : node.allocated
+        ? node.label + ' Lv ' + node.level + ' — ' + node.type + ' technique. ' + (maxed ? 'Fully mastered.' : 'Upgrade to deepen its power (max Lv ' + MAX_LEVEL + ').')
+        : node.type + ' technique. Allocate to awaken it at Lv 1.';
+    let actions;
+    if(!node.allocated){
+      actions = `<button class="btn-allocate alloc" id="allocateBtn" style="background:${node.color}; border-color:${node.color}; color:#0d0b1a">${chainLen > 1 ? 'Unlock Path' : 'Allocate'}</button>`;
+    } else {
+      actions = `
+        <button class="btn-allocate dealloc" id="deallocBtn">Remove</button>
+        <button class="btn-allocate alloc" id="allocateBtn" style="background:${maxed ? 'transparent' : node.color}; border-color:${node.color}; color:${maxed ? node.color : '#0d0b1a'}" ${maxed ? 'disabled' : ''}>${maxed ? 'Maxed' : 'Upgrade'}</button>`;
+    }
+    panel.innerHTML = `
+      <div class="skill-detail-name" style="color:${node.color}">${node.label}${node.allocated ? ' Lv ' + node.level : ''}</div>
+      <div class="skill-detail-branch" style="color:${node.color}; opacity:.65">${node.type} · ${node.kind === 'passive' ? 'Passive' : 'Skill'}${node.allocated ? ' · Lv ' + node.level + ' / ' + MAX_LEVEL : ''}</div>
+      <div class="skill-detail-desc">${desc}</div>
+      <div class="skill-detail-row">
+        <span class="skill-cost">${maxed ? node.level + ' SP invested' : (node.allocated ? 'Upgrade: 1 SP' : 'Cost: ' + chainLen + ' SP · <span style="color:' + (statMet(node) ? '#3ee0b0' : '#ff5fa8') + '">' + statName(node) + ' ' + statReq(node) + '</span>')}</span>
+        <span style="display:flex; gap:10px; justify-content:flex-end">${actions}</span>
+      </div>`;
+    const btn = document.getElementById('allocateBtn');
+    if(btn && !maxed) btn.addEventListener('click', () => node.allocated ? upgradeNode(node.id) : allocateWithStats(node));
+    const dbtn = document.getElementById('deallocBtn');
+    if(dbtn) dbtn.addEventListener('click', () => deallocateNode(node.id));
+  }
+
+  /* ---------- search ---------- */
+  document.getElementById('searchInput').addEventListener('input', e => {
+    renderTree(e.target.value);
+  });
+
+  /* ---------- top-left build points ---------- */
+  const BP_STATS = [
+    { id:'aura',    label:'Aura Reserve' },
+    { id:'flow',    label:'Flow' },
+    { id:'control', label:'Control' },
+    { id:'resolve', label:'Resolve' },
+    { id:'momentum',label:'Momentum' },
+  ];
+  const BP_TOTAL = 400;
+  const bpValues = {}; BP_STATS.forEach(s => bpValues[s.id] = 0);
+
+  function bpSpent(){ return BP_STATS.reduce((sum,s) => sum + bpValues[s.id], 0); }
+
+  function renderBP(){
+    const wrap = document.getElementById('bpRows');
+    wrap.innerHTML = '';
+    const spent = bpSpent();
+    document.getElementById('bpRemaining').textContent = BP_TOTAL - spent;
+    document.getElementById('bpTrackFill').style.width = Math.min(100, (spent/BP_TOTAL)*100) + '%';
+    BP_STATS.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'stat-row';
+      const val = bpValues[s.id];
+      row.innerHTML = `
+        <div class="stat-bar"></div>
+        <div class="stat-name">${s.label}</div>
+        <div class="stepper">
+          <button data-dir="-1" ${val<=0?'disabled':''}>−</button>
+          <span class="val">${val}</span>
+          <button data-dir="1" ${(spent>=BP_TOTAL)?'disabled':''}>+</button>
+        </div>`;
+      row.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const dir = parseInt(btn.dataset.dir,10);
+          if(dir>0 && bpSpent()>=BP_TOTAL) return;
+          if(dir<0 && bpValues[s.id]<=0) return;
+          bpValues[s.id] += dir;
+          renderBP();
+        });
+      });
+      // double-click the number to type a value directly
+      const bpSpan = row.querySelector('.val');
+      bpSpan.title = 'Double-click to type a value';
+      bpSpan.style.cursor = 'pointer';
+      bpSpan.addEventListener('dblclick', () => {
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.className = 'sp-input';
+        input.style.width = '46px';
+        input.min = 0;
+        input.value = bpValues[s.id];
+        bpSpan.replaceWith(input);
+        input.focus();
+        input.select();
+        let cancelled = false;
+        const commit = () => {
+          let v = parseInt(input.value, 10);
+          if(cancelled || isNaN(v)) v = bpValues[s.id];
+          const others = bpSpent() - bpValues[s.id];
+          bpValues[s.id] = Math.max(0, Math.min(v, BP_TOTAL - others));
+          renderBP();
+        };
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', ev => {
+          if(ev.key === 'Enter') input.blur();
+          if(ev.key === 'Escape'){ cancelled = true; input.blur(); }
+        });
+      });
+      wrap.appendChild(row);
+    });
+  }
+
+  /* ---------- bottom-left attribute diamond ---------- */
+  const ATTR_STATS = [
+    { id:'ren',   label:'Ren',   pos:'attr-top',    color:'#ff6b4a' },
+    { id:'ko',    label:'Ko',    pos:'attr-right',  color:'#5ab0ff' },
+    { id:'ten',   label:'Ten',   pos:'attr-bottom', color:'#3ee0b0' },
+    { id:'zetsu', label:'Zetsu', pos:'attr-left',   color:'#b06bff' },
+  ];
+  const ATTR_TOTAL = 400;
+  const attrValues = {}; ATTR_STATS.forEach(s => attrValues[s.id] = 0);
+  function attrSpent(){ return ATTR_STATS.reduce((sum,s) => sum + attrValues[s.id], 0); }
+
+  function renderAttrs(){
+    const wrap = document.getElementById('attrNodes');
+    wrap.innerHTML = '';
+    const spent = attrSpent();
+    document.getElementById('attrRemaining').textContent = ATTR_TOTAL - spent;
+
+    // radar blade — one colour, stretching toward wherever the points go
+    const radar = document.getElementById('attrRadar');
+    const AXES = { 'attr-top':[0,-1], 'attr-right':[1,0], 'attr-bottom':[0,1], 'attr-left':[-1,0] };
+    // pull grows steadily with investment — full stretch at 100 points in a stat
+    const pts = ATTR_STATS.map(s => {
+      const [dx, dy] = AXES[s.pos];
+      const rr = 7 + Math.min(1, attrValues[s.id] / 100) * 39;
+      return (dx * rr).toFixed(1) + ',' + (dy * rr).toFixed(1);
+    }).join(' ');
+    radar.innerHTML = `
+      <polygon points="0,-46 46,0 0,46 -46,0" fill="rgba(212,175,55,.04)" stroke="rgba(212,175,55,.45)" stroke-width="1"/>
+      <polygon points="0,-23 23,0 0,23 -23,0" fill="none" stroke="rgba(212,175,55,.15)" stroke-width="1" stroke-dasharray="3 4"/>
+      <line x1="0" y1="-46" x2="0" y2="46" stroke="rgba(212,175,55,.12)"/>
+      <line x1="-46" y1="0" x2="46" y2="0" stroke="rgba(212,175,55,.12)"/>
+      <polygon points="${pts}" fill="rgba(242,209,107,.78)" stroke="#f2d16b" stroke-width="1.2" stroke-linejoin="round" style="filter:drop-shadow(0 0 8px rgba(242,209,107,.9))"/>`;
+    ATTR_STATS.forEach(s => {
+      const val = attrValues[s.id];
+      const el = document.createElement('div');
+      el.className = 'attr-node ' + s.pos;
+      el.innerHTML = `
+        <div class="attr-label" style="color:${s.color}; text-shadow:0 0 8px ${s.color}66">${s.label}</div>
+        <div class="stepper">
+          <button data-dir="-1" ${val<=0?'disabled':''}>−</button>
+          <span class="val">${val}</span>
+          <button data-dir="1" ${(spent>=ATTR_TOTAL)?'disabled':''}>+</button>
+        </div>`;
+      el.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const dir = parseInt(btn.dataset.dir,10);
+          if(dir>0 && attrSpent()>=ATTR_TOTAL) return;
+          if(dir<0 && attrValues[s.id]<=0) return;
+          attrValues[s.id] += dir;
+          renderAttrs();
+          refreshRequirementViews();
+        });
+      });
+      // double-click the number to type a value directly
+      const valSpan = el.querySelector('.val');
+      valSpan.title = 'Double-click to type a value';
+      valSpan.addEventListener('dblclick', () => {
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.className = 'sp-input';
+        input.style.width = '46px';
+        input.min = 0;
+        input.value = attrValues[s.id];
+        valSpan.replaceWith(input);
+        input.focus();
+        input.select();
+        let cancelled = false;
+        const commit = () => {
+          let v = parseInt(input.value, 10);
+          if(cancelled || isNaN(v)) v = attrValues[s.id];
+          const others = attrSpent() - attrValues[s.id];
+          attrValues[s.id] = Math.max(0, Math.min(v, ATTR_TOTAL - others));
+          renderAttrs();
+          refreshRequirementViews();
+        };
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', ev => {
+          if(ev.key === 'Enter') input.blur();
+          if(ev.key === 'Escape'){ cancelled = true; input.blur(); }
+        });
+      });
+      wrap.appendChild(el);
+    });
+  }
+
+  // requirement met/unmet colouring may change when attributes move
+  function refreshRequirementViews(){
+    if(selectedNodeId !== null){
+      const sn = nodes.find(n => n.id === selectedNodeId);
+      if(sn) updateInfoPanel(sn);
+    }
+    if(hoveredNodeId !== null){
+      const hn = nodes.find(n => n.id === hoveredNodeId);
+      if(hn) fillTooltip(hn);
+    }
+  }
+
+  /* ---------- races ---------- */
+  const RACES = [
+    { name:'Hunter', kanji:'狩', color:'#3ee0b0',
+      desc:'Licensed by the Association. Years of disciplined Ten and Ren training grant steady, balanced growth across every Nen discipline.',
+      base:{ hp:200, aura:110, stam:110, focus:110 },
+      img:'img/hunter-logo.png', imgFit:'contain',
+      // clean hunter green
+      bg:`radial-gradient(circle at 50% 42%, #1a5c40 0%, #0e3a28 55%, #082418 100%)`,
+      // license emblem: twin marks crossing behind a crimson pentagon
+      art:`<svg viewBox="0 0 220 130" style="width:82%; filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))">
+        <g stroke="#f2efe6" stroke-width="21" stroke-linecap="square" fill="none">
+          <path d="M22 14 L86 116"/><path d="M86 14 L22 116"/>
+          <path d="M134 14 L198 116"/><path d="M198 14 L134 116"/>
+        </g>
+        <g stroke="#12100a" stroke-width="12" stroke-linecap="square" fill="none">
+          <path d="M22 14 L86 116"/><path d="M86 14 L22 116"/>
+          <path d="M134 14 L198 116"/><path d="M198 14 L134 116"/>
+        </g>
+        <polygon points="110,24 153,57 137,113 83,113 67,57" fill="#c22a3d" stroke="#f2efe6" stroke-width="4"/>
+      </svg>` },
+    { name:'Chimera', kanji:'獣', color:'#c75bff',
+      desc:'Born of the swarm. Inhuman vitality and predatory instinct — your aura burns hotter and hits harder, but is far harder to control.',
+      base:{ hp:280, aura:130, stam:95, focus:70 },
+      img:'img/chimera.jpg', imgClass:'fade-bottom-soft darkened', imgPos:'50% 92%',
+      bg:`radial-gradient(circle at 50% 30%, #101418 0%, #080a0d 60%, #030405 100%)`,
+      // the brood beneath a radiant crown — abstract silhouettes, no text
+      art:`<svg viewBox="0 0 240 270" style="width:100%;height:100%" preserveAspectRatio="xMidYMid slice">
+        <rect width="240" height="270" fill="#c8cecb"/>
+        <g stroke="#d4af37" fill="none" opacity=".85">
+          <circle cx="120" cy="56" r="24" stroke-width="3"/>
+          <circle cx="120" cy="56" r="40" stroke-width="1.6"/>
+          <g stroke-width="2">
+            <line x1="164" y1="56" x2="180" y2="56"/><line x1="76" y1="56" x2="60" y2="56"/>
+            <line x1="120" y1="12" x2="120" y2="0"/><line x1="120" y1="100" x2="120" y2="112"/>
+            <line x1="151" y1="87" x2="162" y2="98"/><line x1="89" y1="87" x2="78" y2="98"/>
+            <line x1="151" y1="25" x2="162" y2="14"/><line x1="89" y1="25" x2="78" y2="14"/>
+          </g>
+        </g>
+        <circle cx="120" cy="92" r="13" fill="#4d8060"/><rect x="96" y="106" width="48" height="96" rx="12" fill="#3f6b50"/>
+        <circle cx="58" cy="128" r="12" fill="#a34a58"/><rect x="38" y="141" width="40" height="90" rx="11" fill="#94404e"/>
+        <circle cx="182" cy="126" r="12" fill="#d9d3b9"/><rect x="163" y="139" width="38" height="92" rx="11" fill="#cec7aa"/>
+        <path d="M112 146 L117 136 L121 146 Z" fill="#efeef2"/><path d="M128 146 L123 136 L119 146 Z" fill="#efeef2"/>
+        <circle cx="120" cy="156" r="11" fill="#efeef2"/><rect x="102" y="168" width="36" height="76" rx="10" fill="#e3e1e8"/>
+        <ellipse cx="120" cy="252" rx="86" ry="10" fill="#9aa39e" opacity=".55"/>
+      </svg>` },
+    { name:'Rogue Hunter', kanji:'影', color:'#8fa0c0',
+      desc:'No license. No rules. You survive on stolen techniques, quick feet and raw stamina, thriving in the cracks the Association can\'t reach.',
+      base:{ hp:190, aura:95, stam:150, focus:95 },
+      img:'img/rogue.avif', imgClass:'fade-left',
+      bg:`linear-gradient(180deg, #05060c, #030408)`,
+      // a crew of shadows beneath the spider's mark
+      art:`<svg viewBox="0 0 240 270" style="width:100%;height:100%" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="rgRogue" cx="50%" cy="40%" r="60%">
+            <stop offset="0%" stop-color="#7a4fb0" stop-opacity=".85"/>
+            <stop offset="45%" stop-color="#2c2350" stop-opacity=".5"/>
+            <stop offset="100%" stop-color="#0a0d18" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="240" height="270" fill="#0a0d18"/>
+        <circle cx="120" cy="105" r="125" fill="url(#rgRogue)"/>
+        <g fill="#cfe0ff" opacity=".14">
+          <polygon points="120,270 94,108 110,108"/>
+          <polygon points="62,270 56,120 74,124"/>
+          <polygon points="182,270 166,124 184,120"/>
+          <polygon points="28,270 18,152 36,155"/>
+          <polygon points="214,270 204,155 222,152"/>
+          <polygon points="152,270 130,110 144,110"/>
+        </g>
+        <g stroke="#060810" stroke-width="7" fill="none" stroke-linecap="round">
+          <path d="M98 72 C76 56 62 40 54 20"/>
+          <path d="M97 85 C68 82 48 70 34 52"/>
+          <path d="M99 97 C72 104 52 102 36 92"/>
+          <path d="M142 72 C164 56 178 40 186 20"/>
+          <path d="M143 85 C172 82 192 70 206 52"/>
+          <path d="M141 97 C168 104 188 102 204 92"/>
+        </g>
+        <ellipse cx="120" cy="86" rx="23" ry="30" fill="#060810"/>
+        <circle cx="120" cy="50" r="13" fill="#060810"/>
+        <g fill="#04050c">
+          <rect x="28" y="198" width="16" height="52" rx="6"/><circle cx="36" cy="191" r="8"/>
+          <rect x="56" y="190" width="18" height="60" rx="7"/><circle cx="65" cy="182" r="9"/>
+          <rect x="88" y="198" width="15" height="52" rx="6"/><circle cx="95" cy="191" r="8"/>
+          <rect x="112" y="184" width="20" height="66" rx="8"/><circle cx="122" cy="175" r="10"/>
+          <rect x="146" y="196" width="16" height="54" rx="6"/><circle cx="154" cy="189" r="8"/>
+          <rect x="174" y="192" width="17" height="58" rx="7"/><circle cx="182" cy="184" r="9"/>
+          <rect x="202" y="199" width="15" height="51" rx="6"/><circle cx="209" cy="192" r="8"/>
+        </g>
+      </svg>` },
+  ];
+  let raceIndex = 0;
+
+  const raceCardsWrap = document.getElementById('raceCards');
+  RACES.forEach((race, i) => {
+    const card = document.createElement('div');
+    card.className = 'race-card';
+    card.style.setProperty('--race-c', race.color);
+    card.style.setProperty('--race-glow', race.color + '44');
+    card.innerHTML = `
+      <div class="race-name">${race.name}</div>
+      <div class="race-art" style="background:${race.bg}">${race.art || ''}${race.img ? `<img class="race-img${race.imgFit === 'contain' ? ' fit-contain' : ''}${race.imgClass ? ' ' + race.imgClass : ''}" src="${race.img}" alt="" draggable="false"${race.imgPos ? ` style="object-position:${race.imgPos}"` : ''} onerror="this.remove()" onload="this.parentElement.querySelector('svg') && this.parentElement.querySelector('svg').remove()">` : ''}</div>
+      <div class="race-desc">${race.desc}</div>`;
+    card.addEventListener('click', () => {
+      const hadProgress = nodes.some(n => n.allocated);
+      raceIndex = i;
+      resetBuild();   // a new path means a fresh build (also resets the race-locked clan)
+      document.getElementById('raceMenu').classList.add('hidden');
+      showToast('Path of the ' + race.name + ' chosen' + (hadProgress ? ' — build reset' : ''));
+    });
+    raceCardsWrap.appendChild(card);
+  });
+
+  /* ---------- character menu: gear + build stats ---------- */
+  const STAT_META = [
+    { key:'hp',    label:'Health',  color:'#6ee87d', icon:'✚' },
+    { key:'aura',  label:'Aura',    color:'#5ab0ff', icon:'◆' },
+    { key:'stam',  label:'Stamina', color:'#ffd166', icon:'⚡' },
+    { key:'focus', label:'Focus',   color:'#ff5fa8', icon:'✦' },
+  ];
+  const EQUIP_SLOTS = [
+    { label:'Head', items:[
+      { name:'— Empty —', b:{} },
+      { name:"Hunter's Visor", b:{focus:10} },
+      { name:'Aura-Tempered Mask', b:{hp:20} },
+      { name:'Beast-Mane Hood', b:{stam:12} },
+      { name:'Gyo Lens', b:{focus:15, hp:-5} },
+      { name:'Crown of Vows', b:{focus:12, aura:8} },
+      { name:'Carapace Helm', b:{hp:30, focus:-6} },
+      { name:'Phantom Veil', b:{aura:10, stam:6} },
+      { name:'Meteor Circlet', b:{hp:8, aura:8, stam:8, focus:8} },
+    ]},
+    { label:'Body', items:[
+      { name:'— Empty —', b:{} },
+      { name:'Aura-Woven Coat', b:{hp:40} },
+      { name:'Vow-Bound Vest', b:{focus:18, hp:10} },
+      { name:'Chimera Carapace', b:{hp:65, stam:-10} },
+      { name:'Ten Robe', b:{hp:25, aura:10} },
+      { name:"Emperor's Longcoat", b:{hp:20, focus:15} },
+      { name:'Zetsu Cloak', b:{stam:20, focus:10} },
+      { name:'Scarlet Plate', b:{hp:55, focus:-8} },
+      { name:'Conductor Suit', b:{aura:30} },
+    ]},
+    { label:'Arms', items:[
+      { name:'— Empty —', b:{} },
+      { name:'Reinforced Gauntlets', b:{hp:18} },
+      { name:"Conductor's Gloves", b:{aura:15} },
+      { name:'Predator Claws', b:{stam:15} },
+      { name:'Ko Knuckles', b:{hp:20, aura:-5} },
+      { name:'Thread Spinners', b:{focus:12} },
+      { name:'Emitter Bracers', b:{aura:22, hp:-5} },
+      { name:'Shu Wraps', b:{hp:10, stam:10} },
+    ]},
+    { label:'Legs', items:[
+      { name:'— Empty —', b:{} },
+      { name:'Godspeed Greaves', b:{stam:25} },
+      { name:'Earthbound Boots', b:{hp:22} },
+      { name:'Silent Striders', b:{focus:10, stam:8} },
+      { name:'Rhythm Echo Boots', b:{stam:18, focus:6} },
+      { name:'Titan Sabatons', b:{hp:28, stam:-8} },
+      { name:'Skywalk Sandals', b:{aura:12, stam:10} },
+    ]},
+    { label:'Utility', items:[
+      { name:'— Empty —', b:{} },
+      { name:'Hunter License', b:{hp:10, aura:10, stam:10, focus:10} },
+      { name:'Nen Beacon', b:{aura:20} },
+      { name:'Restraint Seal', b:{aura:35, hp:-15} },
+      { name:'Vow Contract', b:{focus:25, hp:-10} },
+      { name:'Beast Fang', b:{hp:15, stam:5} },
+      { name:'Greed Dial', b:{aura:15, focus:10} },
+      { name:'Solar Stone', b:{hp:20, aura:10} },
+    ]},
+  ];
+  const equipState = [0,0,0,0,0];
+
+  // clans are race-locked — index matches RACES order: Hunter, Chimera, Rogue Hunter
+  const CLANS_BY_RACE = [
+    [ // Hunter
+      { name:'No Clan', b:{} },
+      { name:'Freecss Family', b:{hp:12, stam:10} },
+      { name:'Kurta Clan', b:{focus:15, aura:8} },
+      { name:'Nostrade Family', b:{focus:12} },
+      { name:'Hui Guo Rou Royals', b:{hp:10, aura:12} },
+    ],
+    [ // Chimera
+      { name:'No Clan', b:{} },
+      { name:'Royal Bloodline', b:{hp:20, aura:15, focus:-8} },
+      { name:'Royal Guard', b:{hp:25, stam:-5} },
+      { name:'Squadron Leader', b:{hp:12, stam:8} },
+    ],
+    [ // Rogue Hunter
+      { name:'No Clan', b:{} },
+      { name:'Phantom Troupe', b:{stam:12, focus:10} },
+      { name:'Zoldyck Family', b:{stam:18} },
+      { name:'Meteor City Outcasts', b:{hp:10, stam:8} },
+    ],
+  ];
+  function clansFor(){ return CLANS_BY_RACE[raceIndex] || CLANS_BY_RACE[0]; }
+  let clanIndex = 0;
+
+  function bonusText(b){
+    const parts = Object.entries(b).map(([k,v]) => {
+      const meta = STAT_META.find(m => m.key === k);
+      return (v > 0 ? '+' : '') + v + ' ' + meta.label;
+    });
+    return parts.length ? parts.join(', ') : 'No effect';
+  }
+
+  function buildStats(){
+    const s = Object.assign({}, RACES[raceIndex].base);
+    EQUIP_SLOTS.forEach((slot, i) => {
+      const b = slot.items[equipState[i]].b;
+      for(const k in b) s[k] += b[k];
+    });
+    const clans = clansFor();
+    const cb = (clans[clanIndex] || clans[0]).b;
+    for(const k in cb) s[k] += cb[k];
+    return s;
+  }
+
+  /* gear hover tooltip: item name + coloured stat bonus lines */
+  const gearTip = document.getElementById('gearTip');
+  function bonusHTML(b){
+    const entries = Object.entries(b);
+    if(!entries.length) return '<div class="gt-line" style="color:#8a86a3">No stat bonuses</div>';
+    return entries.map(([k, v]) => {
+      const m = STAT_META.find(x => x.key === k);
+      return `<div class="gt-line" style="color:${m.color}">${m.icon} ${v > 0 ? '+' : ''}${v} ${m.label}</div>`;
+    }).join('');
+  }
+  function showGearTip(item, e){
+    gearTip.innerHTML = `<div class="gt-name">${item.name}</div>` + bonusHTML(item.b);
+    gearTip.classList.add('show');
+    moveGearTip(e);
+  }
+  function moveGearTip(e){
+    let x = e.clientX + 16, y = e.clientY + 14;
+    if(x + gearTip.offsetWidth > window.innerWidth - 8)  x = e.clientX - gearTip.offsetWidth - 14;
+    if(y + gearTip.offsetHeight > window.innerHeight - 8) y = e.clientY - gearTip.offsetHeight - 12;
+    gearTip.style.left = x + 'px';
+    gearTip.style.top = y + 'px';
+  }
+  function hideGearTip(){ gearTip.classList.remove('show'); }
+
+  let openSlot = -1;   // which slot's gear dropdown is open
+
+  const clanSelect = document.getElementById('clanSelect');
+  function rebuildClanOptions(){
+    const clans = clansFor();
+    if(clanIndex >= clans.length) clanIndex = 0;
+    clanSelect.innerHTML = '';
+    clans.forEach((c, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      const bonus = Object.entries(c.b).map(([k, v]) => {
+        const m = STAT_META.find(x => x.key === k);
+        return (v > 0 ? '+' : '') + v + ' ' + m.label;
+      }).join(', ');
+      opt.textContent = c.name + (bonus ? ' (' + bonus + ')' : '');
+      clanSelect.appendChild(opt);
+    });
+  }
+  clanSelect.addEventListener('change', () => {
+    clanIndex = parseInt(clanSelect.value, 10) || 0;
+    renderCharacter();
+    showToast(clanIndex === 0 ? 'Clanless' : clansFor()[clanIndex].name + ' joined');
+  });
+
+  function renderCharacter(){
+    rebuildClanOptions();
+    clanSelect.value = clanIndex;
+    const race = RACES[raceIndex];
+    const raceEl = document.getElementById('charRace');
+    raceEl.textContent = '◆ Level ' + charLevel() + ' ' + race.name;
+    raceEl.style.color = race.color;
+    const slotsWrap = document.getElementById('charSlots');
+    slotsWrap.innerHTML = '';
+    EQUIP_SLOTS.forEach((slot, i) => {
+      const item = slot.items[equipState[i]];
+      const holder = document.createElement('div');
+      holder.className = 'slot-holder';
+
+      const el = document.createElement('button');
+      el.className = 'char-slot' + (equipState[i] > 0 ? ' equipped' : '');
+      el.innerHTML = `<div class="slot-label">${slot.label} ${openSlot === i ? '▴' : '▾'}</div><div class="slot-item">${equipState[i] > 0 ? item.name : '+ Add ' + slot.label}</div>`;
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        openSlot = openSlot === i ? -1 : i;
+        hideGearTip();
+        renderCharacter();
+      });
+      el.addEventListener('mouseenter', e => showGearTip(item, e));
+      el.addEventListener('mousemove', moveGearTip);
+      el.addEventListener('mouseleave', hideGearTip);
+      holder.appendChild(el);
+
+      if(openSlot === i){
+        const drop = document.createElement('div');
+        drop.className = 'gear-drop';
+        const search = document.createElement('input');
+        search.className = 'gear-search';
+        search.type = 'text';
+        search.placeholder = 'Search ' + slot.label.toLowerCase() + ' gear...';
+        search.addEventListener('click', e => e.stopPropagation());
+        drop.appendChild(search);
+        const list = document.createElement('div');
+        list.className = 'gear-list';
+        const buildList = term => {
+          list.innerHTML = '';
+          let shown = 0;
+          slot.items.forEach((it, k) => {
+            if(term && !it.name.toLowerCase().includes(term)) return;
+            shown++;
+            const row = document.createElement('div');
+            row.className = 'gear-item' + (k === equipState[i] ? ' active' : '');
+            row.textContent = it.name;
+            row.addEventListener('click', ev => {
+              ev.stopPropagation();
+              equipState[i] = k;
+              openSlot = -1;
+              hideGearTip();
+              renderCharacter();
+            });
+            row.addEventListener('mouseenter', e => showGearTip(it, e));
+            row.addEventListener('mousemove', moveGearTip);
+            row.addEventListener('mouseleave', hideGearTip);
+            list.appendChild(row);
+          });
+          if(!shown) list.innerHTML = '<div class="gear-empty">No gear matches</div>';
+        };
+        buildList('');
+        search.addEventListener('input', () => buildList(search.value.trim().toLowerCase()));
+        drop.appendChild(list);
+        holder.appendChild(drop);
+        setTimeout(() => search.focus(), 0);
+      }
+      slotsWrap.appendChild(holder);
+    });
+    const s = buildStats();
+    document.getElementById('charStatRows').innerHTML = STAT_META.map(m =>
+      `<div class="char-stat-row"><span class="sname" style="color:${m.color}">${m.icon} ${m.label}</span><span class="sval" style="color:${m.color}">${s[m.key]}</span></div>`
+    ).join('');
+  }
+
+  const charModal = document.getElementById('charModal');
+  function closeCharModal(){
+    openSlot = -1;
+    hideGearTip();
+    charModal.classList.add('hidden');
+    if(charFromHub){   // came from the hub — step back to it
+      charFromHub = false;
+      hubModal.classList.remove('hidden');
+    }
+  }
+  document.getElementById('charBtn').addEventListener('click', () => {
+    charFromHub = false;
+    openSlot = -1;
+    renderCharacter();
+    charModal.classList.remove('hidden');
+  });
+  document.getElementById('charClose').addEventListener('click', closeCharModal);
+  charModal.addEventListener('click', e => {
+    if(e.target === charModal){
+      closeCharModal();
+    } else if(openSlot !== -1 && !e.target.closest('.slot-holder')){
+      // clicked elsewhere in the panel — fold the open gear list
+      openSlot = -1;
+      hideGearTip();
+      renderCharacter();
+    }
+  });
+
+  /* ---------- save / share / load builds ---------- */
+  function encodeData(data){
+    return btoa(JSON.stringify(data)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+
+  function buildCode(){
+    return encodeData({
+      v:1, r:raceIndex, p:skillPoints, c:clanIndex,
+      l:nodes.map(n => n.level),
+      a:ATTR_STATS.map(s => attrValues[s.id]),
+      b:BP_STATS.map(s => bpValues[s.id]),
+      e:equipState.slice(),
+    });
+  }
+
+  function applyBuildCode(str){
+    try{
+      let code = (str || '').trim();
+      const m = code.match(/b=([A-Za-z0-9\-_]+)/);
+      if(m) code = m[1];
+      const data = JSON.parse(atob(code.replace(/-/g,'+').replace(/_/g,'/')));
+      if(!data || data.v !== 1 || !Array.isArray(data.l)) return false;
+      nodes.forEach((n, i) => {
+        const lv = Math.max(0, Math.min(MAX_LEVEL, data.l[i] | 0));
+        n.level = lv;
+        n.allocated = lv > 0;
+      });
+      ATTR_STATS.forEach((s, i) => attrValues[s.id] = Math.max(0, (data.a && data.a[i]) | 0));
+      BP_STATS.forEach((s, i) => bpValues[s.id] = Math.max(0, (data.b && data.b[i]) | 0));
+      (data.e || []).forEach((v, i) => {
+        if(EQUIP_SLOTS[i]) equipState[i] = Math.max(0, Math.min(EQUIP_SLOTS[i].items.length - 1, v | 0));
+      });
+      raceIndex = Math.max(0, Math.min(RACES.length - 1, data.r | 0));
+      clanIndex = Math.max(0, Math.min(clansFor().length - 1, data.c | 0));
+      skillPoints = Math.max(0, Math.min(99999, data.p | 0));
+      document.getElementById('skillPointsVal').textContent = skillPoints;
+      selectedNodeId = null;
+      renderBP(); renderAttrs(); renderTree(''); renderCharacter(); updateLevelHud();
+      return true;
+    }catch(err){ return false; }
+  }
+
+  function enterTree(){
+    document.getElementById('intro')?.remove();
+    document.getElementById('raceMenu')?.classList.add('hidden');
+    document.getElementById('selectMenu')?.classList.add('hidden');
+  }
+
+  document.getElementById('loadBtn').addEventListener('click', () => {
+    if(applyBuildCode(document.getElementById('loadInput').value)){
+      enterTree();
+      showToast('Build loaded');
+    } else {
+      showToast('Invalid build code');
+    }
+  });
+  document.getElementById('loadInput').addEventListener('keydown', e => {
+    if(e.key === 'Enter') document.getElementById('loadBtn').click();
+  });
+  document.getElementById('resumeBtn').addEventListener('click', () => {
+    if(applyBuildCode(localStorage.getItem('bn-build'))){
+      enterTree();
+      showToast('Saved build restored');
+    } else {
+      showToast('No saved build found');
+    }
+  });
+
+  /* ---------- hub menu (念 button) ---------- */
+  const hubModal = document.getElementById('hubModal');
+  document.getElementById('nenMenuBtn').addEventListener('click', () => hubModal.classList.remove('hidden'));
+  document.getElementById('hubClose').addEventListener('click', () => hubModal.classList.add('hidden'));
+  hubModal.addEventListener('click', e => { if(e.target === hubModal) hubModal.classList.add('hidden'); });
+  // screens opened from the hub return to it when closed
+  let charFromHub = false, pbFromHub = false;
+  document.querySelectorAll('.hub-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const k = card.dataset.hub;
+      if(k === 'soon'){ showToast('Coming soon'); return; }
+      hubModal.classList.add('hidden');
+      if(k === 'race'){
+        document.getElementById('raceMenu').classList.remove('hidden');
+      } else if(k === 'menu'){
+        document.getElementById('selectMenu').classList.remove('hidden');
+      } else if(k === 'char'){
+        charFromHub = true;
+        openSlot = -1;
+        renderCharacter();
+        charModal.classList.remove('hidden');
+      } else if(k === 'builds'){
+        pbFromHub = true;
+        renderPB();
+        pbModal.classList.remove('hidden');
+      }
+    });
+  });
+
+  /* ---------- popular builds leaderboard ---------- */
+  const pbModal = document.getElementById('pbModal');
+  let pbSort = 'likes';
+
+  function escHTML(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function getPublished(){
+    try{ return JSON.parse(localStorage.getItem('bn-published')) || []; }
+    catch(e){ return []; }
+  }
+  function setPublished(list){ localStorage.setItem('bn-published', JSON.stringify(list)); }
+
+  function renderPB(){
+    const all = getPublished().map(b => Object.assign({}, b, { mine:true }))
+      .sort((a, b) => pbSort === 'likes' ? b.likes - a.likes : b.views - a.views);
+    document.getElementById('pbSub').textContent = pbSort === 'likes' ? 'Most liked builds' : 'Top viewed builds';
+    const grid = document.getElementById('pbGrid');
+    grid.innerHTML = '';
+    if(!all.length){
+      grid.innerHTML = '<div class="pb-empty">No builds published yet. Publish yours to claim the #1 spot — real player builds will fill this board once the server is live.</div>';
+      return;
+    }
+    all.forEach((b, i) => {
+      const race = RACES[b.r] || RACES[0];
+      const card = document.createElement('div');
+      card.className = 'pb-card';
+      card.innerHTML = `
+        <div class="pb-rank">#${i + 1}</div>
+        <span class="pb-race" style="color:${race.color}; border-color:${race.color}66">${race.name}</span>
+        <div class="pb-name">${escHTML(b.name)}${b.mine ? ' ◆' : ''}</div>
+        <div class="pb-meta">
+          <span>👁 ${b.views.toLocaleString()}</span>
+          <button class="pb-like">♥ ${b.likes.toLocaleString()}</button>
+          <span class="pb-code">${b.code.slice(0, 8)}</span>
+        </div>`;
+      card.querySelector('.pb-like').addEventListener('click', e => {
+        e.stopPropagation();
+        b.likes++;
+        if(b.mine){
+          const list = getPublished();
+          const f = list.find(x => x.code === b.code);
+          if(f){ f.likes = b.likes; setPublished(list); }
+        }
+        renderPB();
+      });
+      card.addEventListener('click', () => {
+        if(applyBuildCode(b.code)){
+          b.views++;
+          if(b.mine){
+            const list = getPublished();
+            const f = list.find(x => x.code === b.code);
+            if(f){ f.views = b.views; setPublished(list); }
+          }
+          pbModal.classList.add('hidden');
+          showToast('"' + b.name + '" loaded');
+        } else {
+          showToast('Could not load this build');
+        }
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  function closePB(){
+    pbModal.classList.add('hidden');
+    if(pbFromHub){   // came from the hub — step back to it
+      pbFromHub = false;
+      hubModal.classList.remove('hidden');
+    }
+  }
+  document.getElementById('pbClose').addEventListener('click', closePB);
+  pbModal.addEventListener('click', e => { if(e.target === pbModal) closePB(); });
+  document.querySelectorAll('.pb-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      pbSort = tab.dataset.sort;
+      document.querySelectorAll('.pb-tab').forEach(t => t.classList.toggle('active', t === tab));
+      renderPB();
+    });
+  });
+
+  // publish the current build under a name of your choosing
+  const pbPublishBtn = document.getElementById('pbPublish');
+  pbPublishBtn.addEventListener('click', () => {
+    const wrap = document.createElement('span');
+    wrap.className = 'pb-publish-input';
+    wrap.innerHTML = `<input type="text" maxlength="30" placeholder="Name your build..."><button class="pb-publish">Post</button>`;
+    pbPublishBtn.replaceWith(wrap);
+    const inp = wrap.querySelector('input');
+    inp.focus();
+    const post = () => {
+      const name = inp.value.trim() || 'Unnamed Build';
+      const list = getPublished();
+      list.push({ name, r: raceIndex, code: buildCode(), likes: 0, views: 0 });
+      setPublished(list);
+      wrap.replaceWith(pbPublishBtn);
+      renderPB();
+      showToast('"' + name + '" published to Popular Builds');
+    };
+    wrap.querySelector('button').addEventListener('click', post);
+    inp.addEventListener('keydown', ev => { if(ev.key === 'Enter') post(); });
+  });
+
+  /* ---------- toast ---------- */
+  let toastTimer;
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  /* ---------- reset / save ---------- */
+  function resetBuild(){
+    nodes.forEach(n => { n.allocated = false; n.level = 0; });
+    skillPoints = SKILL_POINTS_TOTAL;
+    BP_STATS.forEach(s => bpValues[s.id] = 0);
+    ATTR_STATS.forEach(s => attrValues[s.id] = 0);
+    equipState.fill(0);
+    clanIndex = 0;
+    renderCharacter();
+    selectedNodeId = null;
+    document.getElementById('skillPointsVal').textContent = skillPoints;
+    document.getElementById('searchInput').value = '';
+    document.getElementById('skillInfoPanel').innerHTML = '<div class="skill-empty"><span class="big">No skill selected</span>Click a node in the skill tree</div>';
+    renderBP(); renderAttrs(); renderTree(''); updateLevelHud();
+  }
+  document.getElementById('resetBtn').addEventListener('click', resetBuild);
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    const code = buildCode();
+    localStorage.setItem('bn-build', code);
+    location.hash = 'b=' + code;
+    const link = location.href;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(link)
+        .then(() => showToast('Build saved — share link copied to clipboard!'))
+        .catch(() => showToast('Build saved — copy the link from the address bar'));
+    } else {
+      showToast('Build saved — copy the link from the address bar');
+    }
+  });
+
+  /* ---------- double-click skill points to type a value ---------- */
+  document.getElementById('skillPointsPill').addEventListener('dblclick', () => {
+    const span = document.getElementById('skillPointsVal');
+    if(!span) return;   // already editing
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'sp-input';
+    input.min = 0; input.max = 99999;
+    input.value = skillPoints;
+    span.replaceWith(input);
+    input.focus();
+    input.select();
+    let cancelled = false;
+    const commit = () => {
+      let v = parseInt(input.value, 10);
+      if(cancelled || isNaN(v)) v = skillPoints;
+      skillPoints = Math.max(0, Math.min(99999, v));
+      const ns = document.createElement('span');
+      ns.className = 'val';
+      ns.id = 'skillPointsVal';
+      ns.textContent = skillPoints;
+      input.replaceWith(ns);
+    };
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', ev => {
+      if(ev.key === 'Enter') input.blur();
+      if(ev.key === 'Escape'){ cancelled = true; input.blur(); }
+    });
+  });
+
+  /* ---------- first-load selection menu ---------- */
+  document.querySelectorAll('.select-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if(card.dataset.choice === 'skills'){
+        document.getElementById('selectMenu').classList.add('hidden');
+      } else {
+        showToast('Coming soon — enter Nen Skills for now');
+      }
+    });
+  });
+
+  /* ---------- init ---------- */
+  const introEl = document.getElementById('intro');
+  introEl.addEventListener('click', () => {
+    if(introEl.classList.contains('opening')) return;
+    introEl.classList.add('opening');
+    setTimeout(() => introEl.remove(), 1200);
+  });
+  // drifting aura motes for the title screen
+  for(let i=0;i<26;i++){
+    const m = document.createElement('span');
+    m.className = 'intro-mote';
+    const size = 2 + Math.random()*2.5;
+    m.style.width = size + 'px';
+    m.style.height = size + 'px';
+    m.style.left = (Math.random()*100) + '%';
+    m.style.setProperty('--mo', (0.25 + Math.random()*0.5).toFixed(2));
+    m.style.boxShadow = '0 0 ' + (size*3).toFixed(0) + 'px rgba(242,209,107,.8)';
+    const dur = 8 + Math.random()*10;
+    m.style.animationDuration = dur.toFixed(1) + 's';
+    m.style.animationDelay = (-Math.random()*dur).toFixed(1) + 's';
+    introEl.appendChild(m);
+  }
+  fitViewBox();
+  renderBP();
+  renderAttrs();
+  renderCharacter();
+  renderTree('');
+  window.addEventListener('resize', () => renderTree(document.getElementById('searchInput').value));
+
+  // shared link? jump straight into the tree with the build applied
+  if(location.hash.includes('b=') && applyBuildCode(location.hash)){
+    enterTree();
+    showToast('Build loaded from link');
+  } else if(localStorage.getItem('bn-build')){
+    document.getElementById('resumeBtn').classList.remove('hidden');
+  }
+})();
+</script>
+
+</body>
+</html>
