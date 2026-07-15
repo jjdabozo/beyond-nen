@@ -407,10 +407,10 @@
   .race-desc{ font-size:12px; line-height:1.55; color:#bfb6d4; padding:14px 16px 18px; }
   /* ---- primary nen type picker ---- */
   .nen-type-menu{
-    position:fixed; inset:0; z-index:17; overflow:auto;
+    position:fixed; inset:0; z-index:17; overflow:hidden;
     background: radial-gradient(ellipse at 50% 38%, #161130 0%, #0b0918 55%, #050409 100%);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:30px; padding:44px 18px;
+    gap:24px; padding:34px 18px;
   }
   .nen-type-menu.hidden{ display:none; }
   .nen-type-menu::before{
@@ -422,7 +422,10 @@
   .nen-type-menu .race-title{ animation: nenDrop .6s cubic-bezier(.2,1.2,.4,1) both; }
   .nen-type-menu .race-sub{ animation: nenDrop .6s .12s cubic-bezier(.2,1.2,.4,1) both; }
   @keyframes nenDrop{ from{ opacity:0; transform:translateY(-16px); } to{ opacity:1; transform:none; } }
-  .nen-type-cards{ display:flex; gap:15px; flex-wrap:wrap; justify-content:center; max-width:1180px; position:relative; z-index:1; }
+  .nen-type-cards{
+    display:grid; grid-template-columns:repeat(3, 178px); gap:15px;
+    justify-content:center; position:relative; z-index:1;
+  }
   .nen-card{
     width:178px; padding:18px 14px 14px; cursor:pointer; text-align:center;
     background: transparent;
@@ -433,7 +436,7 @@
     animation-delay: calc(var(--i, 0) * 95ms + 180ms);
   }
   @keyframes nenCardIn{
-    from{ opacity:0; transform:translateY(30px) scale(.92); }
+    from{ opacity:0; transform:translateY(-36px) scale(.92); }
     to{ opacity:1; transform:none; }
   }
   .nen-card:hover{
