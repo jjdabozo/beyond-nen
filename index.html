@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>Beyond Nen — Skill Tree</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Serif+JP:wght@700&family=Rye&display=swap" rel="stylesheet">
@@ -109,6 +110,39 @@
   .stepper button:hover:not(:disabled){ background: rgba(79,195,255,.18); }
   .stepper button:disabled{ opacity:.25; cursor:not-allowed; }
   .stepper .val{ font-family:'JetBrains Mono',monospace; width:24px; text-align:center; font-size:12px; color:var(--text); cursor:pointer; }
+
+  /* ---- pre-release access gate ---- */
+  .site-gate{
+    position:fixed; inset:0; z-index:100;
+    background: radial-gradient(ellipse at 50% 45%, #0d0b1c 0%, #050409 70%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    transition: opacity .5s ease;
+  }
+  .site-gate.gate-open{ opacity:0; pointer-events:none; }
+  .gate-kanji{
+    font-family:'Noto Serif JP',serif; font-size:84px; color:var(--gold-bright);
+    text-shadow:0 0 34px rgba(79,195,255,.7);
+  }
+  .gate-title{ font-family:'Cinzel',serif; font-weight:900; font-size:26px; letter-spacing:.35em; text-indent:.35em; color:#fff; }
+  .gate-sub{ font-family:'Cinzel',serif; font-size:10px; letter-spacing:.35em; color:var(--text-dim); margin-bottom:10px; }
+  .gate-row{ display:flex; }
+  .gate-row input{
+    width:240px; padding:11px 14px; background:rgba(79,195,255,.05);
+    border:1px solid var(--panel-border); border-right:none; color:var(--text);
+    font-family:'JetBrains Mono',monospace; font-size:13px; outline:none; letter-spacing:.15em;
+  }
+  .gate-row button{
+    padding:11px 22px; background:var(--gold); border:1px solid var(--gold-bright);
+    color:#0d0b1a; font-weight:700; font-size:12px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+  }
+  .gate-err{ min-height:16px; font-size:11px; color:var(--danger); letter-spacing:.08em; }
+
+  /* ---- developer panel ---- */
+  .dev-row{ display:flex; justify-content:space-between; gap:14px; font-size:12.5px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+  .dev-row .k{ color:var(--text-dim); text-transform:uppercase; font-size:10.5px; letter-spacing:.14em; padding-top:2px; }
+  .dev-row .v{ text-align:right; color:var(--text); }
+  .dev-row .v a{ color:var(--gold-bright); }
+  .dev-note{ margin-top:12px; font-size:10.5px; color:var(--text-dim); font-style:italic; line-height:1.6; }
 
   /* ---- top center ---- */
   .hud-top-center{ top:16px; left:50%; transform:translateX(-50%); z-index:5; display:flex; flex-direction:column; align-items:center; gap:12px; position:fixed; }
@@ -712,6 +746,18 @@
 </head>
 <body>
 
+<!-- pre-release access gate -->
+<div class="site-gate" id="siteGate">
+  <div class="gate-kanji">念</div>
+  <div class="gate-title">BEYOND NEN</div>
+  <div class="gate-sub">PRIVATE BETA — ENTER ACCESS CODE</div>
+  <div class="gate-row">
+    <input id="gateInput" type="password" placeholder="Access code..." autocomplete="off">
+    <button id="gateBtn">Enter</button>
+  </div>
+  <div class="gate-err" id="gateErr"></div>
+</div>
+
 <div class="stars" id="stars"></div>
 <div class="watermark">
   <div class="wm-ring"></div>
@@ -884,6 +930,18 @@
     </div>
     <div class="pb-grid" id="pbGrid"></div>
     <div class="pb-note">Click a build to load it — likes &amp; views are stored in your browser for now; a server can make the leaderboard global later.</div>
+  </div>
+</div>
+
+<!-- developer panel (Ctrl+Shift+D) -->
+<div class="hub-modal hidden" id="devModal">
+  <div class="hub-panel">
+    <div class="hub-head">
+      <div><h2>DEVELOPER</h2><span>Owner tools — not linked anywhere</span></div>
+      <button class="char-close" id="devClose">✕</button>
+    </div>
+    <div id="devRows"></div>
+    <div class="dev-note" id="devNote"></div>
   </div>
 </div>
 
@@ -2369,6 +2427,77 @@
     });
     nenCardsWrap.appendChild(card);
   });
+
+  /* ---------- pre-release access gate ----------
+     Flip SITE_LOCKED to false on release day. NOTE: this is a soft lock —
+     it keeps casual visitors out, but a static site cannot hide its source. */
+  const SITE_LOCKED = true;
+  const GATE_CODE = 'nen-dev-2026';
+  const gateEl = document.getElementById('siteGate');
+  if(!SITE_LOCKED || localStorage.getItem('bn-gate') === GATE_CODE){
+    gateEl.remove();
+  } else {
+    const gateInput = document.getElementById('gateInput');
+    const tryUnlock = () => {
+      if(gateInput.value.trim() === GATE_CODE){
+        localStorage.setItem('bn-gate', GATE_CODE);
+        gateEl.classList.add('gate-open');
+        setTimeout(() => gateEl.remove(), 550);
+      } else {
+        document.getElementById('gateErr').textContent = 'Wrong code';
+        gateInput.value = '';
+      }
+    };
+    document.getElementById('gateBtn').addEventListener('click', tryUnlock);
+    gateInput.addEventListener('keydown', e => { if(e.key === 'Enter') tryUnlock(); });
+    setTimeout(() => gateInput.focus(), 100);
+  }
+
+  /* ---------- analytics (GoatCounter) ----------
+     Create a free account at goatcounter.com, then put your site code here
+     (e.g. 'beyondnen' for https://beyondnen.goatcounter.com). Dashboard is
+     private to your GoatCounter login. */
+  const ANALYTICS_CODE = '';
+  if(ANALYTICS_CODE){
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://gc.zgo.at/count.js';
+    s.dataset.goatcounter = 'https://' + ANALYTICS_CODE + '.goatcounter.com/count';
+    document.head.appendChild(s);
+  }
+  // count Discord invite clicks as a custom event
+  document.querySelectorAll('.btn-discord').forEach(a => a.addEventListener('click', () => {
+    if(window.goatcounter && window.goatcounter.count){
+      window.goatcounter.count({ path: 'discord-click', title: 'Discord invite click', event: true });
+    }
+  }));
+
+  /* ---------- developer panel: Ctrl+Shift+D ---------- */
+  const devModal = document.getElementById('devModal');
+  function renderDevPanel(){
+    const rows = [
+      ['Analytics', ANALYTICS_CODE
+        ? `Active — <a href="https://${ANALYTICS_CODE}.goatcounter.com" target="_blank" rel="noopener">open dashboard</a>`
+        : 'Not set up — create a free account at <a href="https://www.goatcounter.com" target="_blank" rel="noopener">goatcounter.com</a>, then set ANALYTICS_CODE'],
+      ['Tracks', 'Page views · referrers · countries · Discord invite clicks'],
+      ['Access gate', SITE_LOCKED ? 'LOCKED — code: <b>' + GATE_CODE + '</b>' : 'Open to everyone'],
+      ['Live site', '<a href="https://jjdabozo.github.io/beyond-nen/" target="_blank" rel="noopener">jjdabozo.github.io/beyond-nen</a>'],
+      ['Repository', '<a href="https://github.com/jjdabozo/beyond-nen" target="_blank" rel="noopener">github.com/jjdabozo/beyond-nen</a>'],
+    ];
+    document.getElementById('devRows').innerHTML = rows.map(([k, v]) =>
+      `<div class="dev-row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+    document.getElementById('devNote').textContent =
+      'This panel is only reachable via Ctrl+Shift+D and is not linked from anywhere on the site. Real visitor stats live on your GoatCounter dashboard, which only your login can see.';
+  }
+  document.addEventListener('keydown', e => {
+    if(e.ctrlKey && e.shiftKey && (e.key === 'D' || e.key === 'd')){
+      e.preventDefault();
+      renderDevPanel();
+      devModal.classList.toggle('hidden');
+    }
+  });
+  document.getElementById('devClose').addEventListener('click', () => devModal.classList.add('hidden'));
+  devModal.addEventListener('click', e => { if(e.target === devModal) devModal.classList.add('hidden'); });
 
   /* ---------- init ---------- */
   const introEl = document.getElementById('intro');
