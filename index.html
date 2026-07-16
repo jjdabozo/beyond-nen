@@ -2432,7 +2432,7 @@
      Flip SITE_LOCKED to false on release day. NOTE: this is a soft lock —
      it keeps casual visitors out, but a static site cannot hide its source. */
   const SITE_LOCKED = true;
-  const GATE_CODE = 'nen-dev-2026';
+  const GATE_CODE = '04072008';
   const gateEl = document.getElementById('siteGate');
   if(!SITE_LOCKED || localStorage.getItem('bn-gate') === GATE_CODE){
     gateEl.remove();
