@@ -1500,8 +1500,8 @@
   /* ---------- points economy ---------- */
   const SKILL_POINTS_TOTAL = 80;
   let skillPoints = SKILL_POINTS_TOTAL;
+  let lastAllocTime = 0;   // when the last unlock happened, to absorb double-click spillover
 
-  // character level grows as you invest skill points: 4 SP = 1 level, cap 100
   // character level rises with stat points: 3 points = 1 level, cap 80
   function charLevel(){ return Math.min(80, Math.floor(bpSpent() / 3)); }
   function updateLevelHud(){
@@ -1552,6 +1552,7 @@
       }
       chain.forEach(c => { c.allocated = true; c.level = 1; justUnlocked.add(c.id); });
       skillPoints -= cost;
+      lastAllocTime = Date.now();   // guards the Upgrade button against double-click spillover
       if(chain.length > 1) showToast('Path unlocked — ' + chain.length + ' skills for ' + cost + ' SP');
     }
     // clicking an already-learned skill only selects it — upgrades go
@@ -1562,6 +1563,9 @@
   function upgradeNode(id){
     const node = nodes.find(n => n.id === id);
     if(!node || !node.allocated) return;
+    // the second click of a double-click on Allocate lands on the freshly
+    // rendered Upgrade button — swallow it so unlocking never auto-upgrades
+    if(Date.now() - lastAllocTime < 450) return;
     selectedNodeId = id;
     if(node.level >= MAX_LEVEL){
       showToast(node.label + ' is already at max level ' + MAX_LEVEL);
