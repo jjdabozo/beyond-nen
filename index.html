@@ -1164,6 +1164,11 @@
     }
     return chain;
   }
+  // skill points to unlock a node: skills cost their tier, passives always 1
+  function spCost(n){ return n.kind === 'passive' ? 1 : n.tier; }
+  function chainCostOf(chain){ return chain.reduce((s, c) => s + spCost(c), 0); }
+  // total SP sunk into an allocated node (unlock cost + upgrades)
+  function investedSP(n){ return n.allocated ? spCost(n) + (n.level - 1) : 0; }
 
   /* ---------- attribute requirements ----------
      Every skill demands attribute points (the top-left panel) before it can
@@ -1539,16 +1544,15 @@
         refresh(node);
         return;
       }
-      if(skillPoints < chain.length){
-        showToast(chain.length > 1
-          ? 'Need ' + chain.length + ' skill points to unlock this path (' + skillPoints + ' left)'
-          : 'No skill points remaining');
+      const cost = chainCostOf(chain);
+      if(skillPoints < cost){
+        showToast('Need ' + cost + ' skill points' + (chain.length > 1 ? ' to unlock this path' : '') + ' (' + skillPoints + ' left)');
         refresh(node);
         return;
       }
       chain.forEach(c => { c.allocated = true; c.level = 1; justUnlocked.add(c.id); });
-      skillPoints -= chain.length;
-      if(chain.length > 1) showToast('Path unlocked — ' + chain.length + ' skills learned');
+      skillPoints -= cost;
+      if(chain.length > 1) showToast('Path unlocked — ' + chain.length + ' skills for ' + cost + ' SP');
     }
     // clicking an already-learned skill only selects it — upgrades go
     // through the Upgrade button so stray clicks can't spend points
@@ -1612,7 +1616,7 @@
       refresh(node);
       return;
     }
-    skillPoints += node.level;
+    skillPoints += investedSP(node);   // unlock cost + upgrade points come back
     node.allocated = false;
     node.level = 0;
     refresh(node);
@@ -1668,10 +1672,10 @@
     status.className = 'tt-status' + (node.allocated ? ' unlocked' : '');
     document.getElementById('ttDesc').textContent = PATH_DESC[node.type];
     document.getElementById('ttCostLabel').style.color = c;
-    const chainLen = node.allocated ? 0 : chainTo(node).length;
+    const ttChain = node.allocated ? [] : chainTo(node);
     document.getElementById('ttCost').textContent = maxed
-      ? node.level + ' SP invested'
-      : (node.allocated ? '1 SP' : chainLen + ' SP' + (chainLen > 1 ? ' (path)' : ''));
+      ? investedSP(node) + ' SP invested'
+      : (node.allocated ? 'Upgrade: 1 SP' : chainCostOf(ttChain) + ' SP' + (ttChain.length > 1 ? ' (path)' : ''));
     document.getElementById('ttCost').style.color = c;
     const req = document.getElementById('ttReq');
     if(parent === null){
@@ -1761,7 +1765,7 @@
       <div class="skill-detail-branch" style="color:${node.color}; opacity:.65">${node.type} · ${node.kind === 'passive' ? 'Passive' : 'Skill'}${node.allocated ? ' · Lv ' + node.level + ' / ' + MAX_LEVEL : ''}</div>
       <div class="skill-detail-desc">${desc}</div>
       <div class="skill-detail-row">
-        <span class="skill-cost">${maxed ? node.level + ' SP invested' : (node.allocated ? 'Upgrade: 1 SP' : 'Cost: ' + chainLen + ' SP' + (chainLen > 1 ? ' (' + chainLen + ' skills)' : '') + ' &nbsp;+&nbsp; needs <span style="color:' + (statMet(node) ? '#3ee0b0' : '#ff5fa8') + '">' + statReq(node) + ' ' + statName(node) + '</span>')}</span>
+        <span class="skill-cost">${maxed ? investedSP(node) + ' SP invested' : (node.allocated ? 'Upgrade: 1 SP' : 'Cost: ' + chainCostOf(chainTo(node)) + ' SP' + (chainLen > 1 ? ' (' + chainLen + ' skills)' : '') + ' &nbsp;+&nbsp; needs <span style="color:' + (statMet(node) ? '#3ee0b0' : '#ff5fa8') + '">' + statReq(node) + ' ' + statName(node) + '</span>')}</span>
         <span style="display:flex; gap:10px; justify-content:flex-end">${actions}</span>
       </div>`;
     const btn = document.getElementById('allocateBtn');
