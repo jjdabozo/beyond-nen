@@ -1761,7 +1761,7 @@
       <div class="skill-detail-branch" style="color:${node.color}; opacity:.65">${node.type} · ${node.kind === 'passive' ? 'Passive' : 'Skill'}${node.allocated ? ' · Lv ' + node.level + ' / ' + MAX_LEVEL : ''}</div>
       <div class="skill-detail-desc">${desc}</div>
       <div class="skill-detail-row">
-        <span class="skill-cost">${maxed ? node.level + ' SP invested' : (node.allocated ? 'Upgrade: 1 SP' : 'Cost: ' + chainLen + ' SP · <span style="color:' + (statMet(node) ? '#3ee0b0' : '#ff5fa8') + '">' + statName(node) + ' ' + statReq(node) + '</span>')}</span>
+        <span class="skill-cost">${maxed ? node.level + ' SP invested' : (node.allocated ? 'Upgrade: 1 SP' : 'Cost: ' + chainLen + ' SP' + (chainLen > 1 ? ' (' + chainLen + ' skills)' : '') + ' &nbsp;+&nbsp; needs <span style="color:' + (statMet(node) ? '#3ee0b0' : '#ff5fa8') + '">' + statReq(node) + ' ' + statName(node) + '</span>')}</span>
         <span style="display:flex; gap:10px; justify-content:flex-end">${actions}</span>
       </div>`;
     const btn = document.getElementById('allocateBtn');
