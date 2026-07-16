@@ -110,24 +110,6 @@
   .stepper button:disabled{ opacity:.25; cursor:not-allowed; }
   .stepper .val{ font-family:'JetBrains Mono',monospace; width:24px; text-align:center; font-size:12px; color:var(--text); cursor:pointer; }
 
-  /* ---- bottom-left: attributes radar (borderless) ---- */
-  .hud-left-bottom{
-    bottom:18px; left:18px; width:320px;
-    border:none; box-shadow:none; background:transparent; backdrop-filter:none;
-  }
-  .diamond-wrap{ position:relative; width:100%; height:280px; margin-top:10px; }
-  #attrRadar{
-    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    pointer-events:none;
-  }
-  .attr-node{ position:absolute; text-align:center; }
-  .attr-node .attr-label{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.12em; color: var(--gold); text-transform:uppercase; margin-bottom:7px; }
-  .attr-node .stepper{ justify-content:center; gap:6px; }
-  .attr-top{ top:4px; left:50%; transform:translateX(-50%); }
-  .attr-right{ top:50%; right:0; transform:translateY(-50%); }
-  .attr-bottom{ bottom:4px; left:50%; transform:translateX(-50%); }
-  .attr-left{ top:50%; left:0; transform:translateY(-50%); }
-
   /* ---- top center ---- */
   .hud-top-center{ top:16px; left:50%; transform:translateX(-50%); z-index:5; display:flex; flex-direction:column; align-items:center; gap:12px; position:fixed; }
   .pill-row{ display:flex; gap:10px; }
@@ -717,7 +699,7 @@
 
   .mobile-note{ display:none; }
   @media (max-width: 980px){
-    .hud-left-top, .hud-left-bottom, .char-open{ display:none; }
+    .hud-left-top, .char-open{ display:none; }
     .hud-top-center{ top:12px; }
     .search-box{ width:220px; }
     .mobile-note{
@@ -842,25 +824,17 @@
 <div class="panel hud-left-top">
   <div class="eyebrow">Character</div>
   <div class="char-lvl">LVL 0</div>
-  <div class="bp-head"><span>Stat Points</span><span class="val"><span id="bpRemaining">240</span>/240</span></div>
+  <div class="bp-head"><span>Attributes</span><span class="val"><span id="bpRemaining">240</span>/240</span></div>
   <div class="bp-track"><div class="bp-track-fill" id="bpTrackFill" style="width:0%"></div></div>
   <div id="bpRows"></div>
-</div>
-
-<!-- bottom-left -->
-<div class="panel hud-left-bottom">
-  <div class="bp-head"><span>Attributes</span><span class="val"><span id="attrRemaining">400</span>/400</span></div>
-  <div class="diamond-wrap">
-    <svg id="attrRadar" viewBox="-75 -75 150 150" width="150" height="150"></svg>
-    <div id="attrNodes"></div>
-  </div>
 </div>
 
 <!-- top center -->
 <div class="hud-top-center">
   <div class="divider-title"><div class="line"></div><h1>Nen Tree</h1><div class="line right"></div></div>
   <div class="pill-row">
-    <div class="pill" id="skillPointsPill" title="Double-click to set a value">Skill Points <span class="val" id="skillPointsVal">200</span></div>
+    <div class="pill" id="skillPointsPill" title="Double-click to set a value">Skill Points <span class="val" id="skillPointsVal">80</span></div>
+    <div class="pill">Attributes <span class="val" id="attrPillVal">240</span></div>
   </div>
   <div class="search-box"><span class="search-icon">⚲</span><input id="searchInput" type="text" placeholder="Search skills & passives..."></div>
 </div>
@@ -976,23 +950,23 @@
       spine:['Aura Sense','Gyo','In','En','Hatsu Awakening'],
       branchA:['Vow','Limitation','Contract Seal'],
       branchB:['Aura Sync','Overload','Beyond State'] },
-    { angle:-90, name:'Enhancement', color:'#ff6b4a', stat:'ren',
+    { angle:-90, name:'Enhancement', color:'#ff6b4a', stat:'strength',
       spine:['Ten Discipline','Ren Surge','Shu','Ko Strike','Ryu Mastery'],
       branchA:['Iron Skin','Titan Grip','Unbreakable'],
       branchB:['Berserk Pulse','Second Wind','Colossus'] },
-    { angle:210, name:'Emission', color:'#5ab0ff', stat:'ko',
+    { angle:210, name:'Emission', color:'#5ab0ff', stat:'stamina',
       spine:['Aura Shot','Remote Ren','Emitted Orb','Warp Step','Aura Cannon'],
       branchA:['Tracer Round','Homing Aura','Barrage'],
       branchB:['Blink','Beacon','Gate'] },
-    { angle:150, name:'Manipulation', color:'#ff5fa8', stat:'zetsu',
+    { angle:150, name:'Manipulation', color:'#ff5fa8', stat:'weapons',
       spine:['Attach Aura','Puppet Thread','Command Word','Domination','Absolute Order'],
       branchA:['Beast Tamer','Swarm Control','Legion'],
       branchB:['Body Hijack','Memory Thread','Marionette'] },
-    { angle: 30, name:'Conjuration', color:'#3ee0b0', stat:'ten',
+    { angle: 30, name:'Conjuration', color:'#3ee0b0', stat:'durability',
       spine:['Materialize','Bound Object','Armory','Living Construct','Perfect Replica'],
       branchA:['Chain Craft','Cage','Prison Realm'],
       branchB:['Blade Craft','Shield Wall','Fortress'] },
-    { angle:-30, name:'Transmutation', color:'#b06bff', stat:'ren',
+    { angle:-30, name:'Transmutation', color:'#b06bff', stat:'nen',
       spine:['Aura Shape','Elastic Aura','Lightning Charge','Razor Aura','Godspeed Flow'],
       branchA:['Sticky Aura','Tar Field','Quicksand'],
       branchB:['Electric Palm','Thunderbolt','Storm Cloak'] },
@@ -1134,14 +1108,14 @@
   }
 
   /* ---------- attribute requirements ----------
-     Every skill demands attribute points before it can be learned:
-     deeper skills need more of the path's governing stat. */
-  const STAT_NAMES = { ren:'Ren', ko:'Ko', ten:'Ten', zetsu:'Zetsu', total:'Total Attr' };
+     Every skill demands attribute points (the top-left panel) before it can
+     be learned: deeper skills need more of the path's governing attribute. */
+  const STAT_NAMES = { strength:'Strength', durability:'Durability', nen:'Nen', weapons:'Weapons', stamina:'Stamina', total:'Total Attr' };
   function sectorOf(n){ return SECTORS.find(s => s.name === n.type); }
   function statReq(n){ return n.tier * (sectorOf(n).stat === 'total' ? 15 : 10); }
   function statHave(n){
     const s = sectorOf(n).stat;
-    return s === 'total' ? attrSpent() : attrValues[s];
+    return s === 'total' ? bpSpent() : bpValues[s];
   }
   function statMet(n){ return statHave(n) >= statReq(n); }
   function statName(n){ return STAT_NAMES[sectorOf(n).stat]; }
@@ -1461,7 +1435,7 @@
   }
 
   /* ---------- points economy ---------- */
-  const SKILL_POINTS_TOTAL = 200;
+  const SKILL_POINTS_TOTAL = 80;
   let skillPoints = SKILL_POINTS_TOTAL;
 
   // character level grows as you invest skill points: 4 SP = 1 level, cap 100
@@ -1549,7 +1523,7 @@
     }
     if(!node.allocated && !statMet(node)){
       const need = statReq(node) - statHave(node);
-      const remaining = ATTR_TOTAL - attrSpent();
+      const remaining = BP_TOTAL - bpSpent();
       if(remaining < need){
         showToast('Not enough attribute points — need ' + need + ', only ' + remaining + ' left');
         refresh(node);
@@ -1558,15 +1532,15 @@
       const s = sectorOf(node).stat;
       if(s === 'total'){
         // spread evenly, always raising the lowest attribute first
-        const keys = ['ren','ko','ten','zetsu'];
+        const keys = BP_STATS.map(x => x.id);
         for(let i=0;i<need;i++){
-          const k = keys.reduce((a,b) => attrValues[a] <= attrValues[b] ? a : b);
-          attrValues[k]++;
+          const k = keys.reduce((a,b) => bpValues[a] <= bpValues[b] ? a : b);
+          bpValues[k]++;
         }
       } else {
-        attrValues[s] += need;
+        bpValues[s] += need;
       }
-      renderAttrs();
+      renderBP();
       showToast('Auto-assigned ' + need + ' ' + statName(node));
     }
     toggleNode(node.id);
@@ -1762,7 +1736,10 @@
     const spent = bpSpent();
     document.getElementById('bpRemaining').textContent = BP_TOTAL - spent;
     document.getElementById('bpTrackFill').style.width = Math.min(100, (spent/BP_TOTAL)*100) + '%';
-    updateLevelHud();   // level = stat points spent / 3
+    const pill = document.getElementById('attrPillVal');
+    if(pill) pill.textContent = BP_TOTAL - spent;
+    updateLevelHud();            // level = attribute points spent / 3
+    refreshRequirementViews();   // skill requirements key off these attributes
     BP_STATS.forEach(s => {
       const row = document.createElement('div');
       row.className = 'stat-row';
@@ -1813,91 +1790,6 @@
         });
       });
       wrap.appendChild(row);
-    });
-  }
-
-  /* ---------- bottom-left attribute diamond ---------- */
-  const ATTR_STATS = [
-    { id:'ren',   label:'Ren',   pos:'attr-top',    color:'#ff6b4a' },
-    { id:'ko',    label:'Ko',    pos:'attr-right',  color:'#5ab0ff' },
-    { id:'ten',   label:'Ten',   pos:'attr-bottom', color:'#3ee0b0' },
-    { id:'zetsu', label:'Zetsu', pos:'attr-left',   color:'#b06bff' },
-  ];
-  const ATTR_TOTAL = 400;
-  const attrValues = {}; ATTR_STATS.forEach(s => attrValues[s.id] = 0);
-  function attrSpent(){ return ATTR_STATS.reduce((sum,s) => sum + attrValues[s.id], 0); }
-
-  function renderAttrs(){
-    const wrap = document.getElementById('attrNodes');
-    wrap.innerHTML = '';
-    const spent = attrSpent();
-    document.getElementById('attrRemaining').textContent = ATTR_TOTAL - spent;
-
-    // radar blade — one colour, stretching toward wherever the points go
-    const radar = document.getElementById('attrRadar');
-    const AXES = { 'attr-top':[0,-1], 'attr-right':[1,0], 'attr-bottom':[0,1], 'attr-left':[-1,0] };
-    // pull grows steadily with investment — full stretch at 100 points in a stat
-    const pts = ATTR_STATS.map(s => {
-      const [dx, dy] = AXES[s.pos];
-      const rr = 7 + Math.min(1, attrValues[s.id] / 100) * 39;
-      return (dx * rr).toFixed(1) + ',' + (dy * rr).toFixed(1);
-    }).join(' ');
-    radar.innerHTML = `
-      <polygon points="0,-46 46,0 0,46 -46,0" fill="rgba(79,195,255,.04)" stroke="rgba(79,195,255,.45)" stroke-width="1"/>
-      <polygon points="0,-23 23,0 0,23 -23,0" fill="none" stroke="rgba(79,195,255,.15)" stroke-width="1" stroke-dasharray="3 4"/>
-      <line x1="0" y1="-46" x2="0" y2="46" stroke="rgba(79,195,255,.12)"/>
-      <line x1="-46" y1="0" x2="46" y2="0" stroke="rgba(79,195,255,.12)"/>
-      <polygon points="${pts}" fill="rgba(159,224,255,.78)" stroke="#9fe0ff" stroke-width="1.2" stroke-linejoin="round" style="filter:drop-shadow(0 0 8px rgba(159,224,255,.9))"/>`;
-    ATTR_STATS.forEach(s => {
-      const val = attrValues[s.id];
-      const el = document.createElement('div');
-      el.className = 'attr-node ' + s.pos;
-      el.innerHTML = `
-        <div class="attr-label" style="color:${s.color}; text-shadow:0 0 8px ${s.color}66">${s.label}</div>
-        <div class="stepper">
-          <button data-dir="-1" ${val<=0?'disabled':''}>−</button>
-          <span class="val">${val}</span>
-          <button data-dir="1" ${(spent>=ATTR_TOTAL)?'disabled':''}>+</button>
-        </div>`;
-      el.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const dir = parseInt(btn.dataset.dir,10);
-          if(dir>0 && attrSpent()>=ATTR_TOTAL) return;
-          if(dir<0 && attrValues[s.id]<=0) return;
-          attrValues[s.id] += dir;
-          renderAttrs();
-          refreshRequirementViews();
-        });
-      });
-      // double-click the number to type a value directly
-      const valSpan = el.querySelector('.val');
-      valSpan.title = 'Double-click to type a value';
-      valSpan.addEventListener('dblclick', () => {
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.className = 'sp-input';
-        input.style.width = '46px';
-        input.min = 0;
-        input.value = attrValues[s.id];
-        valSpan.replaceWith(input);
-        input.focus();
-        input.select();
-        let cancelled = false;
-        const commit = () => {
-          let v = parseInt(input.value, 10);
-          if(cancelled || isNaN(v)) v = attrValues[s.id];
-          const others = attrSpent() - attrValues[s.id];
-          attrValues[s.id] = Math.max(0, Math.min(v, ATTR_TOTAL - others));
-          renderAttrs();
-          refreshRequirementViews();
-        };
-        input.addEventListener('blur', commit);
-        input.addEventListener('keydown', ev => {
-          if(ev.key === 'Enter') input.blur();
-          if(ev.key === 'Escape'){ cancelled = true; input.blur(); }
-        });
-      });
-      wrap.appendChild(el);
     });
   }
 
@@ -2175,7 +2067,7 @@
     return encodeData({
       v:1, p:skillPoints, c:clanIndex, nt:nenPrimary,
       l:nodes.map(n => n.level),
-      a:ATTR_STATS.map(s => attrValues[s.id]),
+
       b:BP_STATS.map(s => bpValues[s.id]),
       e:equipState.slice(),
     });
@@ -2193,7 +2085,7 @@
         n.level = lv;
         n.allocated = lv > 0;
       });
-      ATTR_STATS.forEach((s, i) => attrValues[s.id] = Math.max(0, (data.a && data.a[i]) | 0));
+
       BP_STATS.forEach((s, i) => bpValues[s.id] = Math.max(0, (data.b && data.b[i]) | 0));
       (data.e || []).forEach((v, i) => {
         if(EQUIP_SLOTS[i]) equipState[i] = Math.max(0, Math.min(EQUIP_SLOTS[i].items.length - 1, v | 0));
@@ -2203,7 +2095,7 @@
       skillPoints = Math.max(0, Math.min(99999, data.p | 0));
       document.getElementById('skillPointsVal').textContent = skillPoints;
       selectedNodeId = null;
-      renderBP(); renderAttrs(); renderTree(''); renderCharacter(); updateLevelHud();
+      renderBP(); renderTree(''); renderCharacter(); updateLevelHud();
       return true;
     }catch(err){ return false; }
   }
@@ -2378,7 +2270,7 @@
     nodes.forEach(n => { n.allocated = false; n.level = 0; });
     skillPoints = SKILL_POINTS_TOTAL;
     BP_STATS.forEach(s => bpValues[s.id] = 0);
-    ATTR_STATS.forEach(s => attrValues[s.id] = 0);
+
     equipState.fill(0);
     clanIndex = 0;
     renderCharacter();
@@ -2386,7 +2278,7 @@
     document.getElementById('skillPointsVal').textContent = skillPoints;
     document.getElementById('searchInput').value = '';
     document.getElementById('skillInfoPanel').innerHTML = '<div class="skill-empty"><span class="big">No skill selected</span>Click a node in the skill tree</div>';
-    renderBP(); renderAttrs(); renderTree(''); updateLevelHud();
+    renderBP(); renderTree(''); updateLevelHud();
   }
   document.getElementById('resetBtn').addEventListener('click', resetBuild);
 
@@ -2510,7 +2402,7 @@
   spawnMotes(document.getElementById('nenTypeMenu'), 18);
   fitViewBox();
   renderBP();
-  renderAttrs();
+
   renderCharacter();
   renderTree('');
   window.addEventListener('resize', () => renderTree(document.getElementById('searchInput').value));
