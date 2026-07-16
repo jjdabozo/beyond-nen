@@ -842,7 +842,7 @@
 <div class="panel hud-left-top">
   <div class="eyebrow">Character</div>
   <div class="char-lvl">LVL 0</div>
-  <div class="bp-head"><span>Build Points</span><span class="val"><span id="bpRemaining">400</span>/400</span></div>
+  <div class="bp-head"><span>Stat Points</span><span class="val"><span id="bpRemaining">240</span>/240</span></div>
   <div class="bp-track"><div class="bp-track-fill" id="bpTrackFill" style="width:0%"></div></div>
   <div id="bpRows"></div>
 </div>
@@ -1465,8 +1465,8 @@
   let skillPoints = SKILL_POINTS_TOTAL;
 
   // character level grows as you invest skill points: 4 SP = 1 level, cap 100
-  function spentSP(){ return nodes.reduce((s, n) => s + n.level, 0); }
-  function charLevel(){ return Math.min(100, Math.floor(spentSP() / 4)); }
+  // character level rises with stat points: 3 points = 1 level, cap 80
+  function charLevel(){ return Math.min(80, Math.floor(bpSpent() / 3)); }
   function updateLevelHud(){
     document.querySelector('.char-lvl').textContent = 'LVL ' + charLevel();
     const raceEl = document.getElementById('charRace');
@@ -1743,15 +1743,15 @@
     renderTree(e.target.value);
   });
 
-  /* ---------- top-left build points ---------- */
+  /* ---------- top-left stat points: 80 levels x 3 points ---------- */
   const BP_STATS = [
-    { id:'aura',    label:'Aura Reserve' },
-    { id:'flow',    label:'Flow' },
-    { id:'control', label:'Control' },
-    { id:'resolve', label:'Resolve' },
-    { id:'momentum',label:'Momentum' },
+    { id:'strength',   label:'Strength' },
+    { id:'durability', label:'Durability' },
+    { id:'nen',        label:'Nen' },
+    { id:'weapons',    label:'Weapons' },
+    { id:'stamina',    label:'Stamina' },
   ];
-  const BP_TOTAL = 400;
+  const BP_TOTAL = 240;   // 80 levels x 3 stat points
   const bpValues = {}; BP_STATS.forEach(s => bpValues[s.id] = 0);
 
   function bpSpent(){ return BP_STATS.reduce((sum,s) => sum + bpValues[s.id], 0); }
@@ -1762,6 +1762,7 @@
     const spent = bpSpent();
     document.getElementById('bpRemaining').textContent = BP_TOTAL - spent;
     document.getElementById('bpTrackFill').style.width = Math.min(100, (spent/BP_TOTAL)*100) + '%';
+    updateLevelHud();   // level = stat points spent / 3
     BP_STATS.forEach(s => {
       const row = document.createElement('div');
       row.className = 'stat-row';
