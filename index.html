@@ -474,97 +474,55 @@
     width:26px; height:26px; cursor:pointer; font-size:12px; border-radius:2px;
   }
   .char-close:hover{ color:var(--gold-bright); border-color:var(--gold); }
-  .char-grid{ display:grid; grid-template-columns: 190px 1fr 200px; gap:18px; align-items:stretch; }
-  .char-slots{ display:flex; flex-direction:column; gap:10px; }
-  .slot-holder{ position:relative; }
-  .char-slot{
-    width:100%;
-    border:1px dashed var(--panel-border); background:rgba(79,195,255,.03); border-radius:2px;
-    padding:9px 10px; cursor:pointer; text-align:left;
+  .cc-grid{ display:grid; grid-template-columns: 220px 1fr; gap:24px; align-items:start; }
+  .rarities-box{
+    border:1px solid var(--panel-border); background:rgba(255,255,255,.02);
+    position:relative; padding-bottom:12px;
   }
-  .gear-drop{
-    position:absolute; top:100%; left:0; right:-30px; z-index:6; margin-top:4px;
+  .rarities-title{
+    text-align:center; font-family:'Cinzel',serif; font-weight:700; font-size:14px;
+    letter-spacing:.22em; color:#ff6b4a; padding:9px 0;
+    border-bottom:1px solid var(--panel-border);
+    background:rgba(255,107,74,.06);
+  }
+  .rar-row{
+    display:flex; align-items:center; gap:11px; padding:10px 18px;
+    font-family:'Cinzel',serif; font-weight:700; font-size:13px; letter-spacing:.08em;
+  }
+  .rar-dot{ width:9px; height:9px; border-radius:50%; box-shadow:0 0 9px currentColor; background:currentColor; }
+  .cc-selects{ display:flex; flex-direction:column; gap:17px; }
+  .cc-group{ position:relative; }
+  .cc-label{
+    font-family:'Cinzel',serif; font-size:15px; font-weight:700; letter-spacing:.14em;
+    color:var(--text); margin-bottom:6px;
+  }
+  .cc-bar{
+    width:100%; display:flex; justify-content:space-between; align-items:center;
+    padding:11px 14px; cursor:pointer;
+    background: linear-gradient(180deg, #1a1728, #100e1a);
+    border:1px solid var(--panel-border); border-radius:2px;
+    font-family:'Cinzel',serif; font-weight:700; font-size:13px; letter-spacing:.06em;
+    transition: border-color .15s ease;
+  }
+  .cc-bar:hover{ border-color:var(--gold); }
+  .cc-caret{ color:var(--text-dim); font-size:11px; }
+  .cc-drop{
+    position:absolute; left:0; right:0; top:100%; margin-top:4px; z-index:6;
     background:#12101f; border:1px solid var(--gold);
-    box-shadow:0 12px 34px rgba(0,0,0,.75); padding:8px;
+    box-shadow:0 12px 34px rgba(0,0,0,.75);
+    max-height:198px; overflow-y:auto;
   }
-  .gear-search{
-    width:100%; padding:7px 9px; margin-bottom:6px;
-    background:rgba(79,195,255,.05); border:1px solid var(--panel-border);
-    color:var(--text); font-size:11.5px; font-family:'Inter',sans-serif; outline:none;
+  .cc-drop::-webkit-scrollbar{ width:6px; }
+  .cc-drop::-webkit-scrollbar-thumb{ background:var(--gold-deep); border-radius:3px; }
+  .cc-drop.hidden{ display:none; }
+  .cc-opt{
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    padding:9px 13px; font-size:12.5px; cursor:pointer;
   }
-  .gear-search:focus{ border-color:var(--gold); }
-  .gear-list{ max-height:168px; overflow-y:auto; }
-  .gear-list::-webkit-scrollbar{ width:6px; }
-  .gear-list::-webkit-scrollbar-thumb{ background:var(--gold-deep); border-radius:3px; }
-  .gear-list::-webkit-scrollbar-track{ background:rgba(255,255,255,.04); }
-  .gear-item{ padding:7px 9px; font-size:12px; cursor:pointer; color:var(--text); border-radius:2px; }
-  .gear-item:hover{ background:rgba(79,195,255,.15); color:var(--gold-bright); }
-  .gear-item.active{ color:var(--gold-bright); background:rgba(79,195,255,.08); }
-  .gear-item.active::after{ content:' ✓'; }
-  .gear-empty{ padding:8px; font-size:11px; color:var(--text-dim); text-align:center; }
-  .gear-tip{
-    position:fixed; z-index:40; display:none; pointer-events:none;
-    background:rgba(13,11,26,.97); border:1px solid var(--gold); border-radius:3px;
-    padding:9px 12px; min-width:160px; box-shadow:0 8px 26px rgba(0,0,0,.65);
-  }
-  .gear-tip.show{ display:block; }
-  .gt-name{ font-family:'Cinzel',serif; font-size:12.5px; font-weight:700; color:var(--gold-bright); margin-bottom:5px; }
-  .gt-line{ font-size:11.5px; font-family:'JetBrains Mono',monospace; padding:1.5px 0; }
-  .char-slot:hover{ border-color:var(--gold-bright); background:rgba(79,195,255,.08); }
-  .char-slot .slot-label{ font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim); margin-bottom:3px; }
-  .char-slot .slot-item{ font-size:12px; font-weight:600; color:var(--text); }
-  .char-slot.equipped .slot-item{ color:var(--gold-bright); }
-  .char-fig{
-    display:flex; align-items:center; justify-content:center; position:relative;
-    border:1px solid var(--panel-border-dim);
-    background:radial-gradient(circle at 50% 42%, rgba(90,110,160,.10), transparent 65%);
-    perspective:700px; overflow:hidden;
-  }
-  .rig{
-    position:relative; width:140px; height:150px;
-    transform-style:preserve-3d;
-    animation: rigSpin 12s linear infinite;
-  }
-  @keyframes rigSpin{
-    from{ transform:rotateX(-8deg) rotateY(0deg); }
-    to{ transform:rotateX(-8deg) rotateY(360deg); }
-  }
-  .cube{ position:absolute; transform-style:preserve-3d; }
-  .cube i{
-    position:absolute; left:0; top:0; display:block;
-    background:rgba(84,104,146,.22);
-    border:1px solid rgba(150,170,210,.30);
-    backface-visibility:hidden;
-  }
-  .cube .f{ width:var(--w); height:var(--h); transform:translate(-50%,-50%) translateZ(calc(var(--d)/2)); }
-  .cube .b{ width:var(--w); height:var(--h); transform:translate(-50%,-50%) rotateY(180deg) translateZ(calc(var(--d)/2)); }
-  .cube .l{ width:var(--d); height:var(--h); transform:translate(-50%,-50%) rotateY(-90deg) translateZ(calc(var(--w)/2)); }
-  .cube .r{ width:var(--d); height:var(--h); transform:translate(-50%,-50%) rotateY(90deg) translateZ(calc(var(--w)/2)); }
-  .cube .t{ width:var(--w); height:var(--d); transform:translate(-50%,-50%) rotateX(90deg) translateZ(calc(var(--h)/2)); }
-  .cube.head{ left:70px; top:16px; }
-  .cube.torso{ left:70px; top:55px; }
-  .cube.armL{ left:31px; top:55px; }
-  .cube.armR{ left:109px; top:55px; }
-  .cube.legL{ left:57px; top:107px; }
-  .cube.legR{ left:83px; top:107px; }
-  .fig-shadow{
-    position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
-    width:92px; height:14px; border-radius:50%;
-    background:radial-gradient(ellipse, rgba(0,0,0,.55), transparent 70%);
-  }
-  .char-stats .char-race{ font-family:'Cinzel',serif; font-size:14px; font-weight:700; letter-spacing:.04em; margin-bottom:12px; }
-  .clan-label{ font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px; }
-  .clan-select{
-    width:100%; margin-bottom:14px; padding:7px 8px;
-    background:#12101f; border:1px solid var(--panel-border); color:var(--gold-bright);
-    font-family:'Cinzel',serif; font-size:11px; letter-spacing:.05em; outline:none; cursor:pointer;
-  }
-  .clan-select:hover{ border-color:var(--gold); }
-  .clan-select option{ background:#12101f; color:var(--text); }
-  .char-stats-title{ font-family:'Cinzel',serif; font-size:16px; font-weight:900; color:#fff; margin-bottom:10px; }
-  .char-stat-row{ display:flex; justify-content:space-between; font-size:12.5px; padding:4px 0; letter-spacing:.04em; }
-  .char-stat-row .sname{ color:var(--text); text-transform:uppercase; font-size:11px; letter-spacing:.12em; }
-  .char-stat-row .sval{ font-family:'JetBrains Mono',monospace; font-weight:600; }
+  .cc-opt:hover{ background:rgba(79,195,255,.12); }
+  .cc-opt.active{ background:rgba(79,195,255,.07); }
+  .cc-opt.active::after{ content:'✓'; color:var(--gold-bright); }
+  .cc-rar{ font-size:10px; font-family:'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; }
   .char-hint{ text-align:center; font-size:10.5px; color:var(--text-dim); font-style:italic; margin-top:14px; }
 
   /* ---- first-load selection menu ---- */
@@ -776,35 +734,20 @@
   <div class="nen-type-cards" id="nenTypeCards"></div>
 </div>
 
-<!-- character menu -->
+<!-- character menu: rarities + identity pickers -->
 <div class="char-modal hidden" id="charModal">
   <div class="char-panel">
     <div class="char-title"><span>Character Details</span><button class="char-close" id="charClose">✕</button></div>
-    <div class="char-grid">
-      <div class="char-slots" id="charSlots"></div>
-      <div class="char-fig">
-        <div class="rig">
-          <div class="cube head" style="--w:26px;--h:26px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
-          <div class="cube torso" style="--w:52px;--h:52px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
-          <div class="cube armL" style="--w:26px;--h:52px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
-          <div class="cube armR" style="--w:26px;--h:52px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
-          <div class="cube legL" style="--w:26px;--h:52px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
-          <div class="cube legR" style="--w:26px;--h:52px;--d:26px"><i class="f"></i><i class="b"></i><i class="l"></i><i class="r"></i><i class="t"></i></div>
-        </div>
-        <div class="fig-shadow"></div>
+    <div class="cc-grid">
+      <div class="rarities-box">
+        <div class="rarities-title">RARITIES</div>
+        <div class="rarities-list" id="raritiesList"></div>
       </div>
-      <div class="char-stats">
-        <div class="char-race" id="charRace"></div>
-        <div class="clan-label">◇ Select Clan</div>
-        <select class="clan-select" id="clanSelect"></select>
-        <div class="char-stats-title">Build Stats</div>
-        <div id="charStatRows"></div>
-      </div>
+      <div class="cc-selects" id="ccSelects"></div>
     </div>
-    <div class="char-hint">Click a slot to browse gear — hover an item to see its bonuses</div>
+    <div class="char-hint">Pick your race, lineage, affinity and ability — colours follow the rarities</div>
   </div>
 </div>
-<div class="gear-tip" id="gearTip"></div>
 
 <!-- first-load selection menu -->
 <div class="select-menu" id="selectMenu">
@@ -1509,10 +1452,6 @@
   function charLevel(){ return Math.min(80, Math.floor(bpSpent() / 3)); }
   function updateLevelHud(){
     document.querySelector('.char-lvl').textContent = 'LVL ' + charLevel();
-    const raceEl = document.getElementById('charRace');
-    if(raceEl){
-      raceEl.textContent = '◆ Level ' + charLevel() + ' Hunter';
-    }
   }
 
   function refresh(node){
@@ -1880,235 +1819,99 @@
     }
   }
 
-  /* ---------- character base stats ---------- */
-  const BASE_STATS = { hp:200, aura:110, stam:110, focus:110 };
-
-  /* ---------- character menu: gear + build stats ---------- */
-  const STAT_META = [
-    { key:'hp',    label:'Health',  color:'#6ee87d', icon:'✚' },
-    { key:'aura',  label:'Aura',    color:'#5ab0ff', icon:'◆' },
-    { key:'stam',  label:'Stamina', color:'#ffd166', icon:'⚡' },
-    { key:'focus', label:'Focus',   color:'#ff5fa8', icon:'✦' },
-  ];
-  const EQUIP_SLOTS = [
-    { label:'Head', items:[
-      { name:'— Empty —', b:{} },
-      { name:"Hunter's Visor", b:{focus:10} },
-      { name:'Aura-Tempered Mask', b:{hp:20} },
-      { name:'Beast-Mane Hood', b:{stam:12} },
-      { name:'Gyo Lens', b:{focus:15, hp:-5} },
-      { name:'Crown of Vows', b:{focus:12, aura:8} },
-      { name:'Carapace Helm', b:{hp:30, focus:-6} },
-      { name:'Phantom Veil', b:{aura:10, stam:6} },
-      { name:'Meteor Circlet', b:{hp:8, aura:8, stam:8, focus:8} },
+  /* ---------- character menu: rarities + identity pickers ---------- */
+  const RARITY = {
+    common:    { name:'Common',    color:'#b8c2d0' },
+    uncommon:  { name:'Uncommon',  color:'#6ee87d' },
+    rare:      { name:'Rare',      color:'#4fc3ff' },
+    epic:      { name:'Epic',      color:'#b06bff' },
+    legendary: { name:'Legendary', color:'#ffa02e' },
+    mythic:    { name:'Mythic',    color:'#ff4f6d' },
+  };
+  // affinity options MUST stay in NEN_TYPES order — that picker drives nenPrimary
+  const CC_PICKERS = [
+    { key:'race', label:'RACE', options:[
+      { name:'Hunter', r:'common' },
+      { name:'Rogue Hunter', r:'rare' },
+      { name:'Chimera', r:'legendary' },
     ]},
-    { label:'Body', items:[
-      { name:'— Empty —', b:{} },
-      { name:'Aura-Woven Coat', b:{hp:40} },
-      { name:'Vow-Bound Vest', b:{focus:18, hp:10} },
-      { name:'Chimera Carapace', b:{hp:65, stam:-10} },
-      { name:'Ten Robe', b:{hp:25, aura:10} },
-      { name:"Emperor's Longcoat", b:{hp:20, focus:15} },
-      { name:'Zetsu Cloak', b:{stam:20, focus:10} },
-      { name:'Scarlet Plate', b:{hp:55, focus:-8} },
-      { name:'Conductor Suit', b:{aura:30} },
+    { key:'lineage', label:'LINEAGE', options:[
+      { name:'No Lineage', r:'common' },
+      { name:'Nostrade Family', r:'uncommon' },
+      { name:'Meteor City Outcasts', r:'uncommon' },
+      { name:'Freecss Family', r:'rare' },
+      { name:'Squadron Leader', r:'rare' },
+      { name:'Kurta Clan', r:'epic' },
+      { name:'Hui Guo Rou Royals', r:'epic' },
+      { name:'Zoldyck Family', r:'legendary' },
+      { name:'Phantom Troupe', r:'legendary' },
+      { name:'Royal Guard', r:'legendary' },
+      { name:'Royal Bloodline', r:'mythic' },
     ]},
-    { label:'Arms', items:[
-      { name:'— Empty —', b:{} },
-      { name:'Reinforced Gauntlets', b:{hp:18} },
-      { name:"Conductor's Gloves", b:{aura:15} },
-      { name:'Predator Claws', b:{stam:15} },
-      { name:'Ko Knuckles', b:{hp:20, aura:-5} },
-      { name:'Thread Spinners', b:{focus:12} },
-      { name:'Emitter Bracers', b:{aura:22, hp:-5} },
-      { name:'Shu Wraps', b:{hp:10, stam:10} },
+    { key:'affinity', label:'AFFINITY', options:[
+      { name:'Enhancer', r:'common' },
+      { name:'Transmuter', r:'common' },
+      { name:'Emitter', r:'common' },
+      { name:'Conjurer', r:'common' },
+      { name:'Manipulator', r:'common' },
+      { name:'Specialist', r:'mythic' },
     ]},
-    { label:'Legs', items:[
-      { name:'— Empty —', b:{} },
-      { name:'Godspeed Greaves', b:{stam:25} },
-      { name:'Earthbound Boots', b:{hp:22} },
-      { name:'Silent Striders', b:{focus:10, stam:8} },
-      { name:'Rhythm Echo Boots', b:{stam:18, focus:6} },
-      { name:'Titan Sabatons', b:{hp:28, stam:-8} },
-      { name:'Skywalk Sandals', b:{aura:12, stam:10} },
-    ]},
-    { label:'Utility', items:[
-      { name:'— Empty —', b:{} },
-      { name:'Hunter License', b:{hp:10, aura:10, stam:10, focus:10} },
-      { name:'Nen Beacon', b:{aura:20} },
-      { name:'Restraint Seal', b:{aura:35, hp:-15} },
-      { name:'Vow Contract', b:{focus:25, hp:-10} },
-      { name:'Beast Fang', b:{hp:15, stam:5} },
-      { name:'Greed Dial', b:{aura:15, focus:10} },
-      { name:'Solar Stone', b:{hp:20, aura:10} },
+    { key:'ability', label:'ABILITY', options:[
+      { name:'None', r:'common' },
+      { name:'Stone Pillar', r:'common' },
+      { name:'Nen Scatterbullets', r:'uncommon' },
+      { name:'Toxic Floor', r:'rare' },
+      { name:'Mind Scramble', r:'epic' },
+      { name:'Mamba Mentality', r:'legendary' },
     ]},
   ];
-  const equipState = [0,0,0,0,0];
-
-  // one open clan roster — each carries a small heritage bonus
-  const CLANS = [
-    { name:'No Clan', b:{} },
-    { name:'Freecss Family', b:{hp:12, stam:10} },
-    { name:'Kurta Clan', b:{focus:15, aura:8} },
-    { name:'Nostrade Family', b:{focus:12} },
-    { name:'Hui Guo Rou Royals', b:{hp:10, aura:12} },
-    { name:'Royal Bloodline', b:{hp:20, aura:15, focus:-8} },
-    { name:'Royal Guard', b:{hp:25, stam:-5} },
-    { name:'Squadron Leader', b:{hp:12, stam:8} },
-    { name:'Phantom Troupe', b:{stam:12, focus:10} },
-    { name:'Zoldyck Family', b:{stam:18} },
-    { name:'Meteor City Outcasts', b:{hp:10, stam:8} },
-  ];
-  function clansFor(){ return CLANS; }
-  let clanIndex = 0;
-
-  function bonusText(b){
-    const parts = Object.entries(b).map(([k,v]) => {
-      const meta = STAT_META.find(m => m.key === k);
-      return (v > 0 ? '+' : '') + v + ' ' + meta.label;
-    });
-    return parts.length ? parts.join(', ') : 'No effect';
-  }
-
-  function buildStats(){
-    const s = Object.assign({}, BASE_STATS);
-    EQUIP_SLOTS.forEach((slot, i) => {
-      const b = slot.items[equipState[i]].b;
-      for(const k in b) s[k] += b[k];
-    });
-    const clans = clansFor();
-    const cb = (clans[clanIndex] || clans[0]).b;
-    for(const k in cb) s[k] += cb[k];
-    return s;
-  }
-
-  /* gear hover tooltip: item name + coloured stat bonus lines */
-  const gearTip = document.getElementById('gearTip');
-  function bonusHTML(b){
-    const entries = Object.entries(b);
-    if(!entries.length) return '<div class="gt-line" style="color:#8a86a3">No stat bonuses</div>';
-    return entries.map(([k, v]) => {
-      const m = STAT_META.find(x => x.key === k);
-      return `<div class="gt-line" style="color:${m.color}">${m.icon} ${v > 0 ? '+' : ''}${v} ${m.label}</div>`;
-    }).join('');
-  }
-  function showGearTip(item, e){
-    gearTip.innerHTML = `<div class="gt-name">${item.name}</div>` + bonusHTML(item.b);
-    gearTip.classList.add('show');
-    moveGearTip(e);
-  }
-  function moveGearTip(e){
-    let x = e.clientX + 16, y = e.clientY + 14;
-    if(x + gearTip.offsetWidth > window.innerWidth - 8)  x = e.clientX - gearTip.offsetWidth - 14;
-    if(y + gearTip.offsetHeight > window.innerHeight - 8) y = e.clientY - gearTip.offsetHeight - 12;
-    gearTip.style.left = x + 'px';
-    gearTip.style.top = y + 'px';
-  }
-  function hideGearTip(){ gearTip.classList.remove('show'); }
-
-  let openSlot = -1;   // which slot's gear dropdown is open
-
-  const clanSelect = document.getElementById('clanSelect');
-  function rebuildClanOptions(){
-    const clans = clansFor();
-    if(clanIndex >= clans.length) clanIndex = 0;
-    clanSelect.innerHTML = '';
-    clans.forEach((c, i) => {
-      const opt = document.createElement('option');
-      opt.value = i;
-      const bonus = Object.entries(c.b).map(([k, v]) => {
-        const m = STAT_META.find(x => x.key === k);
-        return (v > 0 ? '+' : '') + v + ' ' + m.label;
-      }).join(', ');
-      opt.textContent = c.name + (bonus ? ' (' + bonus + ')' : '');
-      clanSelect.appendChild(opt);
-    });
-  }
-  clanSelect.addEventListener('change', () => {
-    clanIndex = parseInt(clanSelect.value, 10) || 0;
-    renderCharacter();
-    showToast(clanIndex === 0 ? 'Clanless' : clansFor()[clanIndex].name + ' joined');
-  });
+  const ccSel = { race:0, lineage:0, ability:0 };   // affinity mirrors nenPrimary
 
   function renderCharacter(){
-    rebuildClanOptions();
-    clanSelect.value = clanIndex;
-    const raceEl = document.getElementById('charRace');
-    raceEl.textContent = '◆ Level ' + charLevel() + ' Hunter';
-    raceEl.style.color = 'var(--gold-bright)';
-    const slotsWrap = document.getElementById('charSlots');
-    slotsWrap.innerHTML = '';
-    EQUIP_SLOTS.forEach((slot, i) => {
-      const item = slot.items[equipState[i]];
-      const holder = document.createElement('div');
-      holder.className = 'slot-holder';
-
-      const el = document.createElement('button');
-      el.className = 'char-slot' + (equipState[i] > 0 ? ' equipped' : '');
-      el.innerHTML = `<div class="slot-label">${slot.label} ${openSlot === i ? '▴' : '▾'}</div><div class="slot-item">${equipState[i] > 0 ? item.name : '+ Add ' + slot.label}</div>`;
-      el.addEventListener('click', e => {
-        e.stopPropagation();
-        openSlot = openSlot === i ? -1 : i;
-        hideGearTip();
-        renderCharacter();
+    document.getElementById('raritiesList').innerHTML = Object.values(RARITY).map(r =>
+      `<div class="rar-row" style="color:${r.color}"><span class="rar-dot"></span>${r.name}</div>`).join('');
+    const wrap = document.getElementById('ccSelects');
+    wrap.innerHTML = '';
+    CC_PICKERS.forEach(p => {
+      const idx = p.key === 'affinity' ? nenPrimary : ccSel[p.key];
+      const cur = idx >= 0 ? p.options[idx] : null;
+      const grp = document.createElement('div');
+      grp.className = 'cc-group';
+      grp.innerHTML = `
+        <div class="cc-label">${p.label}</div>
+        <button class="cc-bar" style="color:${cur ? RARITY[cur.r].color : 'var(--text-dim)'}">
+          <span>${cur ? cur.name : '— Choose —'}</span><span class="cc-caret">▾</span>
+        </button>
+        <div class="cc-drop hidden"></div>`;
+      const drop = grp.querySelector('.cc-drop');
+      p.options.forEach((opt, i) => {
+        const row = document.createElement('div');
+        row.className = 'cc-opt' + (i === idx ? ' active' : '');
+        row.innerHTML = `<span style="color:${RARITY[opt.r].color}">${opt.name}</span><span class="cc-rar" style="color:${RARITY[opt.r].color}">${RARITY[opt.r].name}</span>`;
+        row.addEventListener('click', ev => {
+          ev.stopPropagation();
+          if(p.key === 'affinity'){
+            setPrimaryNen(i);
+          } else {
+            ccSel[p.key] = i;
+            showToast(p.label.charAt(0) + p.label.slice(1).toLowerCase() + ': ' + opt.name);
+          }
+          renderCharacter();
+        });
+        drop.appendChild(row);
       });
-      el.addEventListener('mouseenter', e => showGearTip(item, e));
-      el.addEventListener('mousemove', moveGearTip);
-      el.addEventListener('mouseleave', hideGearTip);
-      holder.appendChild(el);
-
-      if(openSlot === i){
-        const drop = document.createElement('div');
-        drop.className = 'gear-drop';
-        const search = document.createElement('input');
-        search.className = 'gear-search';
-        search.type = 'text';
-        search.placeholder = 'Search ' + slot.label.toLowerCase() + ' gear...';
-        search.addEventListener('click', e => e.stopPropagation());
-        drop.appendChild(search);
-        const list = document.createElement('div');
-        list.className = 'gear-list';
-        const buildList = term => {
-          list.innerHTML = '';
-          let shown = 0;
-          slot.items.forEach((it, k) => {
-            if(term && !it.name.toLowerCase().includes(term)) return;
-            shown++;
-            const row = document.createElement('div');
-            row.className = 'gear-item' + (k === equipState[i] ? ' active' : '');
-            row.textContent = it.name;
-            row.addEventListener('click', ev => {
-              ev.stopPropagation();
-              equipState[i] = k;
-              openSlot = -1;
-              hideGearTip();
-              renderCharacter();
-            });
-            row.addEventListener('mouseenter', e => showGearTip(it, e));
-            row.addEventListener('mousemove', moveGearTip);
-            row.addEventListener('mouseleave', hideGearTip);
-            list.appendChild(row);
-          });
-          if(!shown) list.innerHTML = '<div class="gear-empty">No gear matches</div>';
-        };
-        buildList('');
-        search.addEventListener('input', () => buildList(search.value.trim().toLowerCase()));
-        drop.appendChild(list);
-        holder.appendChild(drop);
-        setTimeout(() => search.focus(), 0);
-      }
-      slotsWrap.appendChild(holder);
+      grp.querySelector('.cc-bar').addEventListener('click', ev => {
+        ev.stopPropagation();
+        const wasOpen = !drop.classList.contains('hidden');
+        wrap.querySelectorAll('.cc-drop').forEach(d => d.classList.add('hidden'));
+        if(!wasOpen) drop.classList.remove('hidden');
+      });
+      wrap.appendChild(grp);
     });
-    const s = buildStats();
-    document.getElementById('charStatRows').innerHTML = STAT_META.map(m =>
-      `<div class="char-stat-row"><span class="sname" style="color:${m.color}">${m.icon} ${m.label}</span><span class="sval" style="color:${m.color}">${s[m.key]}</span></div>`
-    ).join('');
   }
 
   const charModal = document.getElementById('charModal');
   function closeCharModal(){
-    openSlot = -1;
-    hideGearTip();
     charModal.classList.add('hidden');
     if(charFromHub){   // came from the hub — step back to it
       charFromHub = false;
@@ -2117,7 +1920,6 @@
   }
   document.getElementById('charBtn').addEventListener('click', () => {
     charFromHub = false;
-    openSlot = -1;
     renderCharacter();
     charModal.classList.remove('hidden');
   });
@@ -2125,11 +1927,9 @@
   charModal.addEventListener('click', e => {
     if(e.target === charModal){
       closeCharModal();
-    } else if(openSlot !== -1 && !e.target.closest('.slot-holder')){
-      // clicked elsewhere in the panel — fold the open gear list
-      openSlot = -1;
-      hideGearTip();
-      renderCharacter();
+    } else if(!e.target.closest('.cc-group')){
+      // clicked elsewhere in the panel — fold any open dropdown
+      document.querySelectorAll('.cc-drop').forEach(d => d.classList.add('hidden'));
     }
   });
 
@@ -2140,11 +1940,10 @@
 
   function buildCode(){
     return encodeData({
-      v:1, p:skillPoints, c:clanIndex, nt:nenPrimary,
+      v:1, p:skillPoints, nt:nenPrimary,
+      rs:ccSel.race, c:ccSel.lineage, ab:ccSel.ability,
       l:nodes.map(n => n.level),
-
       b:BP_STATS.map(s => bpValues[s.id]),
-      e:equipState.slice(),
     });
   }
 
@@ -2162,10 +1961,10 @@
       });
 
       BP_STATS.forEach((s, i) => bpValues[s.id] = Math.max(0, (data.b && data.b[i]) | 0));
-      (data.e || []).forEach((v, i) => {
-        if(EQUIP_SLOTS[i]) equipState[i] = Math.max(0, Math.min(EQUIP_SLOTS[i].items.length - 1, v | 0));
-      });
-      clanIndex = Math.max(0, Math.min(clansFor().length - 1, data.c | 0));
+      const pickerLen = key => CC_PICKERS.find(p => p.key === key).options.length - 1;
+      ccSel.race    = Math.max(0, Math.min(pickerLen('race'),    data.rs | 0));
+      ccSel.lineage = Math.max(0, Math.min(pickerLen('lineage'), data.c  | 0));
+      ccSel.ability = Math.max(0, Math.min(pickerLen('ability'), data.ab | 0));
       nenPrimary = data.nt === undefined ? -1 : Math.max(-1, Math.min(NEN_TYPES.length - 1, data.nt | 0));
       skillPoints = Math.max(0, Math.min(99999, data.p | 0));
       document.getElementById('skillPointsVal').textContent = skillPoints;
@@ -2217,7 +2016,6 @@
         document.getElementById('selectMenu').classList.remove('hidden');
       } else if(k === 'char'){
         charFromHub = true;
-        openSlot = -1;
         renderCharacter();
         charModal.classList.remove('hidden');
       } else if(k === 'builds'){
@@ -2345,9 +2143,7 @@
     nodes.forEach(n => { n.allocated = false; n.level = 0; });
     skillPoints = SKILL_POINTS_TOTAL;
     BP_STATS.forEach(s => bpValues[s.id] = 0);
-
-    equipState.fill(0);
-    clanIndex = 0;
+    ccSel.race = 0; ccSel.lineage = 0; ccSel.ability = 0;
     renderCharacter();
     selectedNodeId = null;
     document.getElementById('skillPointsVal').textContent = skillPoints;
@@ -2414,6 +2210,19 @@
   });
 
   /* ---------- primary nen type picker ---------- */
+  // shared by the fullscreen picker and the character menu's AFFINITY selector
+  function setPrimaryNen(i){
+    nenPrimary = i;
+    document.getElementById('nenTypeMenu').classList.add('hidden');
+    // if the current build now exceeds an affinity cap, it has to start over
+    if(nodes.some(n => n.allocated && !inReach(n))){
+      resetBuild();
+      showToast(NEN_TYPES[i].name + ' chosen — build reset by your new affinity limits');
+    } else {
+      showToast('Primary Nen: ' + NEN_TYPES[i].name);
+    }
+    refresh(null);
+  }
   const AFF_ORDER = ['Enhancement','Transmutation','Conjuration','Specialization','Manipulation','Emission'];
   const nenCardsWrap = document.getElementById('nenTypeCards');
   NEN_TYPES.forEach((t, i) => {
@@ -2430,18 +2239,7 @@
       <div class="nk" style="color:${t.color}; text-shadow:0 0 22px ${t.color}">${t.kanji}</div>
       <div class="nn">${t.name}</div>
       <div class="nen-aff">${rows}</div>`;
-    card.addEventListener('click', () => {
-      nenPrimary = i;
-      document.getElementById('nenTypeMenu').classList.add('hidden');
-      // if the current build now exceeds an affinity cap, it has to start over
-      if(nodes.some(n => n.allocated && !inReach(n))){
-        resetBuild();
-        showToast(t.name + ' chosen — build reset by your new affinity limits');
-      } else {
-        showToast('Primary Nen: ' + t.name);
-      }
-      refresh(null);
-    });
+    card.addEventListener('click', () => setPrimaryNen(i));
     nenCardsWrap.appendChild(card);
   });
 
