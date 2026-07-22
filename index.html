@@ -28,7 +28,10 @@
     font-family:'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* game-style UI: double-clicks must never highlight text */
+    -webkit-user-select:none; user-select:none;
   }
+  input, textarea{ -webkit-user-select:text; user-select:text; }
 
   .stars{ position:fixed; inset:0; z-index:0; }
   .star{
@@ -1626,21 +1629,27 @@
     refresh(node);
   }
 
-  // single click selects a node; DOUBLE click learns it — no accidental unlocks
+  // single click selects a node; a second quick click on the SAME node learns it.
+  // We detect the double-click ourselves because every click re-renders the SVG,
+  // which breaks the browser's native dblclick pairing.
+  let lastClickNodeId = -1, lastClickAt = 0;
   svg.addEventListener('click', e => {
     if(dragMoved){ dragMoved = false; return; }   // was a pan, not a pick
     const g = e.target.closest('[data-node-id]');
     if(!g) return;
-    const node = nodes.find(n => n.id === parseInt(g.getAttribute('data-node-id'), 10));
+    const id = parseInt(g.getAttribute('data-node-id'), 10);
+    const node = nodes.find(n => n.id === id);
     if(!node) return;
-    selectedNodeId = node.id;
-    refresh(node);
-  });
-  svg.addEventListener('dblclick', e => {
-    if(dragMoved) return;
-    const g = e.target.closest('[data-node-id]');
-    if(!g) return;
-    toggleNode(parseInt(g.getAttribute('data-node-id'), 10));
+    const now = Date.now();
+    if(id === lastClickNodeId && now - lastClickAt < 450){
+      lastClickAt = 0;          // consume the pair
+      toggleNode(id);           // second quick click = unlock
+    } else {
+      lastClickNodeId = id;
+      lastClickAt = now;
+      selectedNodeId = id;
+      refresh(node);
+    }
   });
 
   /* ---------- hover skill card ---------- */
