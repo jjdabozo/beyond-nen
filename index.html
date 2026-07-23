@@ -421,6 +421,15 @@
     background: radial-gradient(circle at 50% 18%, var(--nc-glow, rgba(79,195,255,.2)), transparent 72%);
     box-shadow:0 10px 34px rgba(0,0,0,.6), 0 0 26px var(--nc-glow, rgba(79,195,255,.25));
   }
+  /* the currently chosen affinity stays lit */
+  .nen-card.active{
+    border-color:var(--nc, var(--gold-bright));
+    background: radial-gradient(circle at 50% 18%, var(--nc-glow, rgba(79,195,255,.2)), transparent 72%);
+    box-shadow:0 0 26px var(--nc-glow, rgba(79,195,255,.25));
+  }
+  .nen-card.active .nn::before{
+    content:'✓ '; color:var(--nc, var(--gold-bright));
+  }
   .nen-card .nk{
     font-family:'Noto Serif JP',serif; font-size:46px; line-height:1.1; margin-bottom:8px;
     animation: kanjiBreath 3.2s ease-in-out infinite;
@@ -2299,7 +2308,7 @@
       skillPoints = Math.max(0, Math.min(99999, data.p | 0));
       document.getElementById('skillPointsVal').textContent = skillPoints;
       selectedNodeId = null;
-      renderBP(); renderTree(''); renderCharacter(); updateLevelHud();
+      renderBP(); renderTree(''); renderCharacter(); refreshNenCards(); updateLevelHud();
       return true;
     }catch(err){ return false; }
   }
@@ -2341,6 +2350,7 @@
       const k = card.dataset.hub;
       hubModal.classList.add('hidden');
       if(k === 'nentype'){
+        refreshNenCards();
         document.getElementById('nenTypeMenu').classList.remove('hidden');
       } else if(k === 'menu'){
         document.getElementById('selectMenu').classList.remove('hidden');
@@ -2544,6 +2554,7 @@
   // shared by the fullscreen picker and the character menu's AFFINITY selector
   function setPrimaryNen(i){
     nenPrimary = i;
+    refreshNenCards();
     document.getElementById('nenTypeMenu').classList.add('hidden');
     // if the current build now exceeds an affinity cap, it has to start over
     if(nodes.some(n => n.allocated && !inReach(n))){
@@ -2573,6 +2584,10 @@
     card.addEventListener('click', () => setPrimaryNen(i));
     nenCardsWrap.appendChild(card);
   });
+  // light up the currently chosen affinity card
+  function refreshNenCards(){
+    [...nenCardsWrap.children].forEach((c, i) => c.classList.toggle('active', i === nenPrimary));
+  }
 
   /* ---------- pre-release access gate ----------
      Flip SITE_LOCKED to false on release day. NOTE: this is a soft lock —
