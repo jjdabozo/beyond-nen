@@ -576,6 +576,7 @@
     font-family:'Cinzel',serif; font-weight:700; font-size:13px; letter-spacing:.08em;
   }
   .rar-dot{ width:9px; height:9px; border-radius:50%; box-shadow:0 0 9px currentColor; background:currentColor; }
+  .rar-rate{ font-family:'JetBrains Mono',monospace; font-size:11.5px; }
   .cc-selects{ display:flex; flex-direction:column; gap:17px; }
   .cc-group{ position:relative; }
   .cc-label{
@@ -1934,12 +1935,12 @@
 
   /* ---------- character menu: rarities + identity pickers ---------- */
   const RARITY = {
-    common:    { name:'Common',    color:'#b8c2d0' },
-    uncommon:  { name:'Uncommon',  color:'#6ee87d' },
-    rare:      { name:'Rare',      color:'#4fc3ff' },
-    epic:      { name:'Epic',      color:'#b06bff' },
-    legendary: { name:'Legendary', color:'#ffa02e' },
-    mythic:    { name:'Mythic',    color:'#ff4f6d' },
+    common:    { name:'Common',    color:'#b8c2d0', rate:'60%' },
+    uncommon:  { name:'Uncommon',  color:'#6ee87d', rate:'25%' },
+    rare:      { name:'Rare',      color:'#4fc3ff', rate:'10%' },
+    epic:      { name:'Epic',      color:'#b06bff', rate:'4%' },
+    legendary: { name:'Legendary', color:'#ffa02e', rate:'1%' },
+    mythic:    { name:'Mythic',    color:'#ff4f6d', rate:'0.1%' },
   };
   // affinity options MUST stay in NEN_TYPES order — that picker drives nenPrimary
   const CC_PICKERS = [
@@ -1949,17 +1950,26 @@
       { name:'Chimera', r:'legendary' },
     ]},
     { key:'lineage', label:'LINEAGE', options:[
-      { name:'No Lineage', r:'common' },
-      { name:'Nostrade Family', r:'uncommon' },
-      { name:'Meteor City Outcasts', r:'uncommon' },
-      { name:'Freecss Family', r:'rare' },
-      { name:'Squadron Leader', r:'rare' },
-      { name:'Kurta Clan', r:'epic' },
-      { name:'Hui Guo Rou Royals', r:'epic' },
-      { name:'Zoldyck Family', r:'legendary' },
-      { name:'Phantom Troupe', r:'legendary' },
-      { name:'Royal Guard', r:'legendary' },
-      { name:'Royal Bloodline', r:'mythic' },
+      { name:'Clow', r:'common' },
+      { name:'Ndongo', r:'common' },
+      { name:'Kwalski', r:'common' },
+      { name:'Hackett', r:'common' },
+      { name:'Tocino', r:'common' },
+      { name:'Mageub', r:'uncommon' },
+      { name:'Bine', r:'uncommon' },
+      { name:'Nostrade', r:'uncommon' },
+      { name:'Mackernasey', r:'uncommon' },
+      { name:'Murasalo', r:'uncommon' },
+      { name:'Koshi', r:'uncommon' },
+      { name:'Hazama', r:'rare' },
+      { name:'Hill', r:'rare' },
+      { name:'Krueger', r:'rare' },
+      { name:'Lucilfer', r:'epic' },
+      { name:'Morrow', r:'epic' },
+      { name:'Netero', r:'epic' },
+      { name:'Kurta', r:'legendary' },
+      { name:'Freecss', r:'legendary' },
+      { name:'Zoldyck', r:'mythic' },
     ]},
     { key:'affinity', label:'AFFINITY', options:[
       { name:'Enhancer', r:'common' },
@@ -1980,13 +1990,14 @@
   ];
   const ccSel = { race:0, lineage:0, ability:0 };   // affinity mirrors nenPrimary
 
-  // heritage bonuses per lineage (applied to build stats below)
-  const LINEAGE_BONUS = {
-    'No Lineage':{}, 'Nostrade Family':{focus:12}, 'Meteor City Outcasts':{hp:10, stam:8},
-    'Freecss Family':{hp:12, stam:10}, 'Squadron Leader':{hp:12, stam:8},
-    'Kurta Clan':{focus:15, aura:8}, 'Hui Guo Rou Royals':{hp:10, aura:12},
-    'Zoldyck Family':{stam:18}, 'Phantom Troupe':{stam:12, focus:10},
-    'Royal Guard':{hp:25, stam:-5}, 'Royal Bloodline':{hp:20, aura:15, focus:-8},
+  // heritage bonus scales with the lineage's rarity tier
+  const LINEAGE_TIER_BONUS = {
+    common:    {},
+    uncommon:  { hp:8 },
+    rare:      { hp:10, stam:8 },
+    epic:      { aura:12, focus:8 },
+    legendary: { hp:15, stam:12 },
+    mythic:    { stam:20, focus:12 },
   };
 
   /* ---------- character gear + build stats ---------- */
@@ -2058,8 +2069,8 @@
       const b = slot.items[equipState[i]].b;
       for(const k in b) s[k] += b[k];
     });
-    const lineageName = CC_PICKERS.find(p => p.key === 'lineage').options[ccSel.lineage].name;
-    const lb = LINEAGE_BONUS[lineageName] || {};
+    const lineageOpt = CC_PICKERS.find(p => p.key === 'lineage').options[ccSel.lineage];
+    const lb = LINEAGE_TIER_BONUS[lineageOpt.r] || {};
     for(const k in lb) s[k] += lb[k];
     return s;
   }
@@ -2091,9 +2102,9 @@
   let openSlot = -1;   // which slot's gear dropdown is open
 
   function renderCharacter(){
-    // rarity legend
+    // rarity legend with drop rates
     document.getElementById('raritiesList').innerHTML = Object.values(RARITY).map(r =>
-      `<div class="rar-row" style="color:${r.color}"><span class="rar-dot"></span>${r.name}</div>`).join('');
+      `<div class="rar-row" style="color:${r.color}"><span class="rar-dot"></span><span style="flex:1">${r.name}</span><span class="rar-rate">${r.rate}</span></div>`).join('');
 
     // identity pickers
     const wrap = document.getElementById('ccSelects');
@@ -2113,7 +2124,7 @@
       p.options.forEach((opt, i) => {
         const row = document.createElement('div');
         row.className = 'cc-opt' + (i === idx ? ' active' : '');
-        row.innerHTML = `<span style="color:${RARITY[opt.r].color}">${opt.name}</span><span class="cc-rar" style="color:${RARITY[opt.r].color}">${RARITY[opt.r].name}</span>`;
+        row.innerHTML = `<span style="color:${RARITY[opt.r].color}">${opt.name}</span><span class="cc-rar" style="color:${RARITY[opt.r].color}">${p.key === 'lineage' ? RARITY[opt.r].rate : RARITY[opt.r].name}</span>`;
         row.addEventListener('click', ev => {
           ev.stopPropagation();
           if(p.key === 'affinity'){
