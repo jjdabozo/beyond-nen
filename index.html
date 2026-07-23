@@ -1945,9 +1945,11 @@
   // affinity options MUST stay in NEN_TYPES order — that picker drives nenPrimary
   const CC_PICKERS = [
     { key:'race', label:'RACE', options:[
-      { name:'Hunter', r:'common' },
-      { name:'Rogue Hunter', r:'rare' },
-      { name:'Chimera', r:'legendary' },
+      { name:'Human', r:'common' },
+      { name:'Rabbit', r:'uncommon' },
+      { name:'Cat', r:'rare' },
+      { name:'Cyborg', r:'epic' },
+      { name:'Celestial', r:'mythic' },
     ]},
     { key:'lineage', label:'LINEAGE', options:[
       { name:'Clow', r:'common' },
@@ -2124,7 +2126,7 @@
       p.options.forEach((opt, i) => {
         const row = document.createElement('div');
         row.className = 'cc-opt' + (i === idx ? ' active' : '');
-        row.innerHTML = `<span style="color:${RARITY[opt.r].color}">${opt.name}</span><span class="cc-rar" style="color:${RARITY[opt.r].color}">${p.key === 'lineage' ? RARITY[opt.r].rate : RARITY[opt.r].name}</span>`;
+        row.innerHTML = `<span style="color:${RARITY[opt.r].color}">${opt.name}</span><span class="cc-rar" style="color:${RARITY[opt.r].color}">${(p.key === 'lineage' || p.key === 'race') ? RARITY[opt.r].rate : RARITY[opt.r].name}</span>`;
         row.addEventListener('click', ev => {
           ev.stopPropagation();
           if(p.key === 'affinity'){
